@@ -10,57 +10,111 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @Query(sort: \Task.creationDate) private var tasks: [Task]
+    @State private var showingConfiguration = false
+    
+    var activeTasks: [Task] {
+        tasks.filter { task in
+            let calendar = Calendar.current
+            return calendar.isDateInToday(task.nextDueDate) || task.isOverdue
+        }.sorted { $0.nextDueDate < $1.nextDueDate }
+    }
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        NavigationStack {
+            VStack {
+                if activeTasks.isEmpty {
+                    Spacer()
+                    Text("Done!")
+                        .font(.system(size: 60, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("All tasks completed for today")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(activeTasks) { task in
+                                TaskCard(task: task)
+                                    .onTapGesture {
+                                        withAnimation {
+                                            task.markCompleted()
+                                        }
+                                    }
+                            }
+                        }
+                        .padding()
                     }
                 }
-                .onDelete(perform: deleteItems)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
+            .navigationTitle("Venja")
             .toolbar {
-#if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button(action: { showingConfiguration = true }) {
+                        Image(systemName: "gear")
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            .sheet(isPresented: $showingConfiguration) {
+                ConfigurationView()
+            }
+            .onAppear {
+                updateMissedCounts()
             }
         }
+    }
+    
+    private func updateMissedCounts() {
+        for task in tasks {
+            task.updateMissedCount()
+        }
+    }
+}
+
+struct TaskCard: View {
+    let task: Task
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.name)
+                    .font(.headline)
+                Text("\(task.schedulePeriod) \(task.scheduleUnit.rawValue.lowercased())")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                if task.isOverdue {
+                    Text("Overdue by \(task.daysOverdue) days")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+            
+            Spacer()
+            
+            if task.missedCount > 0 {
+                ZStack {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 30, height: 30)
+                    Text("\(task.missedCount)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
+            
+            Image(systemName: "checkmark.circle")
+                .font(.title2)
+                .foregroundColor(.gray)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Task.self, inMemory: true)
 }
