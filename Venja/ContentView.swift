@@ -12,6 +12,9 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Task.creationDate) private var tasks: [Task]
     @State private var showingConfiguration = false
+    @State private var undoManager = TaskUndoManager()
+    @State private var showingUndoAlert = false
+    @State private var lastUndoAction: UndoAction?
     
     var activeTasks: [Task] {
         tasks.filter { task in
@@ -46,7 +49,14 @@ struct ContentView: View {
                                 TaskCard(task: task)
                                     .onTapGesture {
                                         withAnimation {
+                                            let previousDate = task.lastCompletedDate
+                                            let previousMissedCount = task.missedCount
                                             task.markCompleted()
+                                            undoManager.recordCompletion(
+                                                task: task,
+                                                previousDate: previousDate,
+                                                previousMissedCount: previousMissedCount
+                                            )
                                             saveCurrentTaskForWidget()
                                         }
                                     }
@@ -58,17 +68,49 @@ struct ContentView: View {
             }
             .navigationTitle("Venja")
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingConfiguration = true }) {
                         Image(systemName: "gear")
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showingConfiguration = true }) {
+                        Image(systemName: "gear")
+                    }
+                }
+                #endif
             }
             .sheet(isPresented: $showingConfiguration) {
                 ConfigurationView()
             }
             .onAppear {
                 updateMissedCounts()
+                #if os(iOS)
+                NotificationCenter.default.addObserver(
+                    forName: .deviceDidShake,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    handleShake()
+                }
+                #endif
+            }
+            .alert("Undo Action", isPresented: $showingUndoAlert) {
+                Button("Undo") {
+                    if let action = lastUndoAction {
+                        withAnimation {
+                            _ = undoManager.undo()
+                            saveCurrentTaskForWidget()
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                if let action = lastUndoAction {
+                    Text("Undo completion of '\(action.task.name)'?")
+                }
             }
         }
     }
@@ -80,6 +122,16 @@ struct ContentView: View {
         
         // Update widget data
         saveCurrentTaskForWidget()
+    }
+    
+    private func handleShake() {
+        guard undoManager.canUndo else { return }
+        
+        // Get the most recent action without removing it from the stack
+        if let recentAction = undoManager.undoStack.last {
+            lastUndoAction = recentAction
+            showingUndoAlert = true
+        }
     }
     
     private func saveCurrentTaskForWidget() {
@@ -145,7 +197,15 @@ struct TaskCard: View {
                 .foregroundColor(.gray)
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        #if os(iOS)
+        .background(
+            Color(UIColor.secondarySystemBackground)
+        )
+        #else
+        .background(
+            Color(NSColor.controlBackgroundColor)
+        )
+        #endif
         .cornerRadius(12)
     }
 }

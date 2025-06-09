@@ -39,6 +39,7 @@ struct ConfigurationView: View {
             }
             .navigationTitle("Tasks")
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
                         dismiss()
@@ -49,6 +50,18 @@ struct ConfigurationView: View {
                         Image(systemName: "plus")
                     }
                 }
+                #else
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showingAddTask = true }) {
+                        Image(systemName: "plus")
+                    }
+                }
+                #endif
             }
             .sheet(isPresented: $showingAddTask) {
                 AddTaskView()
@@ -99,8 +112,11 @@ struct AddTaskView: View {
                 }
             }
             .navigationTitle("New Task")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
@@ -112,6 +128,19 @@ struct AddTaskView: View {
                     }
                     .disabled(taskName.isEmpty)
                 }
+                #else
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Add") {
+                        addTask()
+                    }
+                    .disabled(taskName.isEmpty)
+                }
+                #endif
             }
             .onAppear {
                 isTaskNameFocused = true

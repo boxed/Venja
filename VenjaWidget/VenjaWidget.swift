@@ -79,7 +79,6 @@ struct VenjaWidgetEntryView : View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(task.missedCount > 0 ? Color.red : Color.clear)
         } else {
             VStack {
                 Image(systemName: "checkmark.circle.fill")
@@ -100,7 +99,7 @@ struct VenjaWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VenjaWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(entry.task?.missedCount ?? 0 > 0 ? Color.red : Color(UIColor.tertiarySystemFill), for: .widget)
         }
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }

@@ -13,6 +13,19 @@ enum ScheduleUnit: String, Codable, CaseIterable {
     case weeks = "Weeks"
     case months = "Months"
     case years = "Years"
+    
+    var calendarComponent: Calendar.Component {
+        switch self {
+        case .days:
+            return .day
+        case .weeks:
+            return .weekOfYear
+        case .months:
+            return .month
+        case .years:
+            return .year
+        }
+    }
 }
 
 @Model
@@ -37,16 +50,7 @@ final class Task {
         let referenceDate = lastCompletedDate ?? creationDate
         let calendar = Calendar.current
         
-        switch scheduleUnit {
-        case .days:
-            return calendar.date(byAdding: .day, value: schedulePeriod, to: referenceDate) ?? referenceDate
-        case .weeks:
-            return calendar.date(byAdding: .weekOfYear, value: schedulePeriod, to: referenceDate) ?? referenceDate
-        case .months:
-            return calendar.date(byAdding: .month, value: schedulePeriod, to: referenceDate) ?? referenceDate
-        case .years:
-            return calendar.date(byAdding: .year, value: schedulePeriod, to: referenceDate) ?? referenceDate
-        }
+        return calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: referenceDate) ?? referenceDate
     }
     
     var isOverdue: Bool {
@@ -65,9 +69,51 @@ final class Task {
         missedCount = 0
     }
     
+    func undoCompletion(previousDate: Date?, previousMissedCount: Int) {
+        lastCompletedDate = previousDate
+        missedCount = previousMissedCount
+    }
+    
     func updateMissedCount() {
-        if schedulePeriod == 1 && scheduleUnit == .days && isOverdue {
-            missedCount = daysOverdue
+        guard isOverdue else {
+            missedCount = 0
+            return
+        }
+        
+        // For daily tasks, calculate based on days overdue
+        if scheduleUnit == .days {
+            if schedulePeriod == 1 {
+                // For single-day tasks, if we're overdue but daysOverdue is 0 (less than 24h), count it as 1
+                missedCount = daysOverdue == 0 ? 1 : daysOverdue
+            } else {
+                missedCount = daysOverdue / schedulePeriod
+            }
+            return
+        }
+        
+        // Calculate the time units between nextDueDate and now
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([scheduleUnit.calendarComponent], from: nextDueDate, to: Date())
+        
+        let unitsOverdue: Int
+        switch scheduleUnit {
+        case .days:
+            unitsOverdue = components.day ?? 0
+        case .weeks:
+            unitsOverdue = components.weekOfYear ?? 0
+        case .months:
+            unitsOverdue = components.month ?? 0
+        case .years:
+            unitsOverdue = components.year ?? 0
+        }
+        
+        // For weekly/monthly/yearly or multi-day periods:
+        // If we're 0 units overdue but still overdue, we've missed 1 period
+        // Otherwise, count complete periods plus the current one
+        if unitsOverdue == 0 {
+            missedCount = 1
+        } else {
+            missedCount = (unitsOverdue / schedulePeriod) + 1
         }
     }
 }
