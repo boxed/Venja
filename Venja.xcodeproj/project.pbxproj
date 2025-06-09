@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AE4DF75D2DF5ED9D002F6B38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */; };
+		AE4DF75F2DF5ED9D002F6B38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */; };
+		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AE4DF7352DF5E324002F6B38 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +27,36 @@
 			remoteGlobalIDString = AE4DF7222DF5E323002F6B38;
 			remoteInfo = Venja;
 		};
+		AE4DF76E2DF5ED9E002F6B38 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AE4DF71B2DF5E323002F6B38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AE4DF7592DF5ED9D002F6B38;
+			remoteInfo = VenjaWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AE4DF7752DF5ED9E002F6B38 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		AE4DF7232DF5E323002F6B38 /* Venja.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Venja.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4DF7342DF5E324002F6B38 /* VenjaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VenjaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4DF73E2DF5E324002F6B38 /* VenjaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VenjaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VenjaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +66,13 @@
 				Info.plist,
 			);
 			target = AE4DF7222DF5E323002F6B38 /* Venja */;
+		};
+		AE4DF7742DF5ED9E002F6B38 /* Exceptions for "VenjaWidget" folder in "VenjaWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -56,6 +93,14 @@
 		AE4DF7412DF5E324002F6B38 /* VenjaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = VenjaUITests;
+			sourceTree = "<group>";
+		};
+		AE4DF7602DF5ED9D002F6B38 /* VenjaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AE4DF7742DF5ED9E002F6B38 /* Exceptions for "VenjaWidget" folder in "VenjaWidgetExtension" target */,
+			);
+			path = VenjaWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -82,6 +127,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AE4DF7572DF5ED9D002F6B38 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AE4DF75F2DF5ED9D002F6B38 /* SwiftUI.framework in Frameworks */,
+				AE4DF75D2DF5ED9D002F6B38 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +145,8 @@
 				AE4DF7252DF5E323002F6B38 /* Venja */,
 				AE4DF7372DF5E324002F6B38 /* VenjaTests */,
 				AE4DF7412DF5E324002F6B38 /* VenjaUITests */,
+				AE4DF7602DF5ED9D002F6B38 /* VenjaWidget */,
+				AE4DF75B2DF5ED9D002F6B38 /* Frameworks */,
 				AE4DF7242DF5E323002F6B38 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,8 +157,18 @@
 				AE4DF7232DF5E323002F6B38 /* Venja.app */,
 				AE4DF7342DF5E324002F6B38 /* VenjaTests.xctest */,
 				AE4DF73E2DF5E324002F6B38 /* VenjaUITests.xctest */,
+				AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AE4DF75B2DF5ED9D002F6B38 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */,
+				AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -115,10 +181,12 @@
 				AE4DF71F2DF5E323002F6B38 /* Sources */,
 				AE4DF7202DF5E323002F6B38 /* Frameworks */,
 				AE4DF7212DF5E323002F6B38 /* Resources */,
+				AE4DF7752DF5ED9E002F6B38 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AE4DF76F2DF5ED9E002F6B38 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AE4DF7252DF5E323002F6B38 /* Venja */,
@@ -176,6 +244,28 @@
 			productReference = AE4DF73E2DF5E324002F6B38 /* VenjaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AE4DF7712DF5ED9E002F6B38 /* Build configuration list for PBXNativeTarget "VenjaWidgetExtension" */;
+			buildPhases = (
+				AE4DF7562DF5ED9D002F6B38 /* Sources */,
+				AE4DF7572DF5ED9D002F6B38 /* Frameworks */,
+				AE4DF7582DF5ED9D002F6B38 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AE4DF7602DF5ED9D002F6B38 /* VenjaWidget */,
+			);
+			name = VenjaWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = VenjaWidgetExtension;
+			productReference = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +287,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = AE4DF7222DF5E323002F6B38;
 					};
+					AE4DF7592DF5ED9D002F6B38 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = AE4DF71E2DF5E323002F6B38 /* Build configuration list for PBXProject "Venja" */;
@@ -216,6 +309,7 @@
 				AE4DF7222DF5E323002F6B38 /* Venja */,
 				AE4DF7332DF5E324002F6B38 /* VenjaTests */,
 				AE4DF73D2DF5E324002F6B38 /* VenjaUITests */,
+				AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -236,6 +330,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AE4DF73C2DF5E324002F6B38 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AE4DF7582DF5ED9D002F6B38 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +367,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AE4DF7562DF5ED9D002F6B38 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +386,11 @@
 			isa = PBXTargetDependency;
 			target = AE4DF7222DF5E323002F6B38 /* Venja */;
 			targetProxy = AE4DF73F2DF5E324002F6B38 /* PBXContainerItemProxy */;
+		};
+		AE4DF76F2DF5ED9E002F6B38 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
+			targetProxy = AE4DF76E2DF5ED9E002F6B38 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -568,6 +681,65 @@
 			};
 			name = Release;
 		};
+		AE4DF7722DF5ED9E002F6B38 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B6FVY827P9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VenjaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VenjaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.kodare.Venja.VenjaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AE4DF7732DF5ED9E002F6B38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B6FVY827P9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VenjaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VenjaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.kodare.Venja.VenjaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -603,6 +775,15 @@
 			buildConfigurations = (
 				AE4DF7502DF5E324002F6B38 /* Debug */,
 				AE4DF7512DF5E324002F6B38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AE4DF7712DF5ED9E002F6B38 /* Build configuration list for PBXNativeTarget "VenjaWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE4DF7722DF5ED9E002F6B38 /* Debug */,
+				AE4DF7732DF5ED9E002F6B38 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

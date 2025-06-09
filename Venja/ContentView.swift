@@ -47,6 +47,7 @@ struct ContentView: View {
                                     .onTapGesture {
                                         withAnimation {
                                             task.markCompleted()
+                                            saveCurrentTaskForWidget()
                                         }
                                     }
                             }
@@ -76,7 +77,36 @@ struct ContentView: View {
         for task in tasks {
             task.updateMissedCount()
         }
+        
+        // Update widget data
+        saveCurrentTaskForWidget()
     }
+    
+    private func saveCurrentTaskForWidget() {
+        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+        
+        if let firstTask = activeTasks.first {
+            let taskData = WidgetTaskData(
+                name: firstTask.name,
+                missedCount: firstTask.missedCount,
+                schedulePeriod: firstTask.schedulePeriod,
+                scheduleUnit: firstTask.scheduleUnit.rawValue
+            )
+            
+            if let encoded = try? JSONEncoder().encode(taskData) {
+                userDefaults.set(encoded, forKey: "currentTask")
+            }
+        } else {
+            userDefaults.removeObject(forKey: "currentTask")
+        }
+    }
+}
+
+struct WidgetTaskData: Codable {
+    let name: String
+    let missedCount: Int
+    let schedulePeriod: Int
+    let scheduleUnit: String
 }
 
 struct TaskCard: View {
