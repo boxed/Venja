@@ -95,7 +95,16 @@ struct VenjaWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VenjaWidgetEntryView(entry: entry)
-                .containerBackground(entry.task?.missedCount ?? 0 > 0 ? Color.red : Color(UIColor.tertiarySystemFill), for: .widget)
+//                .containerBackground(entry.task?.missedCount ?? 0 > 0 ? Color.red : Color(UIColor.tertiarySystemFill), for: .widget)
+                .containerBackground(for: .widget) {
+                    if entry.task?.missedCount ?? 0 > 0 {
+                        Color.red
+                    }
+                    else {
+                        RoundedRectangle(cornerRadius: 21)
+                            .stroke(.green, lineWidth: 4)
+                    }
+                }
         }
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
