@@ -37,11 +37,11 @@ final class Task {
     var lastCompletedDate: Date?
     var missedCount: Int
     
-    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit) {
+    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date()) {
         self.name = name
         self.schedulePeriod = schedulePeriod
         self.scheduleUnit = scheduleUnit
-        self.creationDate = Date()
+        self.creationDate = creationDate
         self.lastCompletedDate = nil
         self.missedCount = 0
     }

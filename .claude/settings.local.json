@@ -7,7 +7,8 @@
       "Bash(qlmanage:*)",
       "Bash(__NEW_LINE__ sips -z 16 16 icon_1024x1024.png --out icon_16x16.png)",
       "Bash(sips:*)",
-      "Bash(swift:*)"
+      "Bash(swift:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

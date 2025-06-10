@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -151,6 +152,9 @@ struct ContentView: View {
         } else {
             userDefaults.removeObject(forKey: "currentTask")
         }
+        
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
