@@ -63,10 +63,6 @@ struct VenjaWidgetEntryView : View {
                     .foregroundColor(task.missedCount > 0 ? .white : .primary)
                     .lineLimit(2)
                 
-                Text("Every \(task.schedulePeriod) \(task.scheduleUnit.lowercased())")
-                    .font(.caption)
-                    .foregroundColor(task.missedCount > 0 ? .white.opacity(0.8) : .secondary)
-                
                 if task.missedCount > 0 {
                     HStack {
                         Image(systemName: "exclamationmark.circle.fill")

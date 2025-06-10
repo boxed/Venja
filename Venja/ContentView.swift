@@ -173,14 +173,6 @@ struct TaskCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.name)
                     .font(.headline)
-                Text("\(task.schedulePeriod) \(task.scheduleUnit.rawValue.lowercased())")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                if task.isOverdue {
-                    Text("Overdue by \(task.daysOverdue) days")
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
             }
             
             Spacer()
@@ -195,10 +187,6 @@ struct TaskCard: View {
                         .foregroundColor(.white)
                 }
             }
-            
-            Image(systemName: "checkmark.circle")
-                .font(.title2)
-                .foregroundColor(.gray)
         }
         .padding()
         #if os(iOS)
