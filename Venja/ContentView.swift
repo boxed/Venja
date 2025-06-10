@@ -215,6 +215,19 @@ struct TaskCard: View {
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Task.self, inMemory: true)
+    let container = try! ModelContainer(for: Task.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let context = container.mainContext
+    
+    let twoWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -2, to: Date())!
+    
+    let task1 = Task(name: "Water plants", schedulePeriod: 3, scheduleUnit: .days, creationDate: twoWeeksAgo)
+    let task2 = Task(name: "Clean bathroom", schedulePeriod: 1, scheduleUnit: .weeks, creationDate: twoWeeksAgo)
+    let task3 = Task(name: "Check smoke detectors", schedulePeriod: 1, scheduleUnit: .months, creationDate: twoWeeksAgo)
+    
+    context.insert(task1)
+    context.insert(task2)
+    context.insert(task3)
+    
+    return ContentView()
+        .modelContainer(container)
 }
