@@ -30,12 +30,12 @@ enum ScheduleUnit: String, Codable, CaseIterable {
 
 @Model
 final class Task {
-    var name: String
-    var schedulePeriod: Int
-    var scheduleUnit: ScheduleUnit
-    var creationDate: Date
-    var lastCompletedDate: Date?
-    var missedCount: Int
+    var name: String = ""
+    var schedulePeriod: Int = 0
+    var scheduleUnit: ScheduleUnit = ScheduleUnit.days
+    var creationDate: Date = Date()
+    var lastCompletedDate: Date? = nil
+    var missedCount: Int = 0
     
     init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date()) {
         self.name = name
