@@ -80,6 +80,9 @@ struct ConfigurationView: View {
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 500)
+        #endif
     }
     
     private func deleteTasks(offsets: IndexSet) {
@@ -164,6 +167,9 @@ struct AddTaskView: View {
                 isTaskNameFocused = true
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 400)
+        #endif
     }
     
     private func addTask() {
@@ -255,6 +261,9 @@ struct EditTaskView: View {
                 isTaskNameFocused = true
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 400)
+        #endif
     }
     
     private func saveTask() {

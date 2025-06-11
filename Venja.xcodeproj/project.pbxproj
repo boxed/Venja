@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		AE4DF75D2DF5ED9D002F6B38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */; };
 		AE4DF75F2DF5ED9D002F6B38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */; };
-		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -389,6 +389,7 @@
 		};
 		AE4DF76F2DF5ED9E002F6B38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
 			targetProxy = AE4DF76E2DF5ED9E002F6B38 /* PBXContainerItemProxy */;
 		};
