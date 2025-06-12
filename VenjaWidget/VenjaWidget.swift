@@ -97,7 +97,7 @@ struct VenjaWidget: Widget {
             VenjaWidgetEntryView(entry: entry)
 //                .containerBackground(entry.task?.missedCount ?? 0 > 0 ? Color.red : Color(UIColor.tertiarySystemFill), for: .widget)
                 .containerBackground(for: .widget) {
-                    if entry.task?.missedCount ?? 0 > 0 {
+                    if let _ = entry.task {
                         Color.red
                     }
                     else {
@@ -128,6 +128,6 @@ extension Provider {
 #Preview(as: .systemSmall) {
     VenjaWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), task: WidgetTaskData(name: "Take vitamins", missedCount: 3, schedulePeriod: 1, scheduleUnit: "Days"))
+    SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), task: WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days"))
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), task: nil)
 }

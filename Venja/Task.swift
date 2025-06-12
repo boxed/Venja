@@ -32,15 +32,24 @@ enum ScheduleUnit: String, Codable, CaseIterable {
 final class Task {
     var name: String = ""
     var schedulePeriod: Int = 0
-    var scheduleUnit: ScheduleUnit = ScheduleUnit.days
+    private var scheduleUnitRawValue: String = ScheduleUnit.days.rawValue
     var creationDate: Date = Date()
     var lastCompletedDate: Date? = nil
     var missedCount: Int = 0
     
+    var scheduleUnit: ScheduleUnit {
+        get {
+            ScheduleUnit(rawValue: scheduleUnitRawValue) ?? .days
+        }
+        set {
+            scheduleUnitRawValue = newValue.rawValue
+        }
+    }
+    
     init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date()) {
         self.name = name
         self.schedulePeriod = schedulePeriod
-        self.scheduleUnit = scheduleUnit
+        self.scheduleUnitRawValue = scheduleUnit.rawValue
         self.creationDate = creationDate
         self.lastCompletedDate = nil
         self.missedCount = 0
