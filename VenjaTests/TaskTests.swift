@@ -12,11 +12,11 @@ import SwiftData
 
 struct TaskTests {
     
-    private func createTestTask(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit) -> Task {
-        let container = try! ModelContainer(for: Task.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    private func createTestTask(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit) -> VTask {
+        let container = try! ModelContainer(for: VTask.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         let context = ModelContext(container)
         
-        let task = Task(name: name, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit)
+        let task = VTask(name: name, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit)
         context.insert(task)
         
         return task

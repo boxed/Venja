@@ -11,9 +11,9 @@ import SwiftData
 struct ConfigurationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Task.name) private var tasks: [Task]
+    @Query(sort: \VTask.name) private var tasks: [VTask]
     @State private var showingAddTask = false
-    @State private var taskToEdit: Task?
+    @State private var taskToEdit: VTask?
     @State private var showingEditTask = false
     
     var body: some View {
@@ -41,7 +41,6 @@ struct ConfigurationView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
                 .onDelete(perform: deleteTasks)
             }
@@ -173,7 +172,7 @@ struct AddTaskView: View {
     }
     
     private func addTask() {
-        let newTask = Task(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate)
+        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate)
         modelContext.insert(newTask)
         dismiss()
     }
@@ -182,7 +181,7 @@ struct AddTaskView: View {
 struct EditTaskView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Bindable var task: Task
+    @Bindable var task: VTask
     
     @State private var taskName: String
     @State private var schedulePeriod: Int
@@ -190,7 +189,7 @@ struct EditTaskView: View {
     @State private var creationDate: Date
     @FocusState private var isTaskNameFocused: Bool
     
-    init(task: Task) {
+    init(task: VTask) {
         self.task = task
         _taskName = State(initialValue: task.name)
         _schedulePeriod = State(initialValue: task.schedulePeriod)
@@ -277,5 +276,5 @@ struct EditTaskView: View {
 
 #Preview {
     ConfigurationView()
-        .modelContainer(for: Task.self, inMemory: true)
+        .modelContainer(for: VTask.self, inMemory: true)
 }

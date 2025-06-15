@@ -11,13 +11,13 @@ import WidgetKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Task.creationDate) private var tasks: [Task]
+    @Query(sort: \VTask.creationDate) private var tasks: [VTask]
     @State private var showingConfiguration = false
     @State private var undoManager = TaskUndoManager()
     @State private var showingUndoAlert = false
     @State private var lastUndoAction: UndoAction?
     
-    var activeTasks: [Task] {
+    var activeTasks: [VTask] {
         tasks.filter { task in
             let calendar = Calendar.current
             return calendar.isDateInToday(task.nextDueDate) || task.isOverdue
@@ -166,7 +166,7 @@ struct WidgetTaskData: Codable {
 }
 
 struct TaskCard: View {
-    let task: Task
+    let task: VTask
     
     var body: some View {
         HStack {
@@ -203,14 +203,14 @@ struct TaskCard: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Task.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let container = try! ModelContainer(for: VTask.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     let context = container.mainContext
     
     let twoWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -2, to: Date())!
     
-    let task1 = Task(name: "Water plants", schedulePeriod: 3, scheduleUnit: .days, creationDate: twoWeeksAgo)
-    let task2 = Task(name: "Clean bathroom", schedulePeriod: 1, scheduleUnit: .weeks, creationDate: twoWeeksAgo)
-    let task3 = Task(name: "Check smoke detectors", schedulePeriod: 1, scheduleUnit: .months, creationDate: twoWeeksAgo)
+    let task1 = VTask(name: "Water plants", schedulePeriod: 3, scheduleUnit: .days, creationDate: twoWeeksAgo)
+    let task2 = VTask(name: "Clean bathroom", schedulePeriod: 1, scheduleUnit: .weeks, creationDate: twoWeeksAgo)
+    let task3 = VTask(name: "Check smoke detectors", schedulePeriod: 1, scheduleUnit: .months, creationDate: twoWeeksAgo)
     
     context.insert(task1)
     context.insert(task2)

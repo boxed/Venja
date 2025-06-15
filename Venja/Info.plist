@@ -5,6 +5,11 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>net.kodare.Venja.refresh</string>
 	</array>
 </dict>
 </plist>

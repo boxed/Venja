@@ -21,17 +21,34 @@ struct Provider: AppIntentTimelineProvider {
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
+        
         let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let task = await fetchFirstActiveTask()
-            let entry = SimpleEntry(date: entryDate, configuration: configuration, task: task)
-            entries.append(entry)
+        let calendar = Calendar.current
+        
+        // Create entries for the next 24 hours at specific intervals
+        // First entry is immediate
+        let task = await fetchFirstActiveTask()
+        entries.append(SimpleEntry(date: currentDate, configuration: configuration, task: task))
+        
+        // Add entries every 30 minutes for the next 4 hours
+        for halfHourOffset in 1...8 {
+            if let entryDate = calendar.date(byAdding: .minute, value: halfHourOffset * 30, to: currentDate) {
+                let task = await fetchFirstActiveTask()
+                entries.append(SimpleEntry(date: entryDate, configuration: configuration, task: task))
+            }
         }
-
-        return Timeline(entries: entries, policy: .atEnd)
+        
+        // Add an entry at midnight to refresh for the new day
+        if let tomorrow = calendar.dateInterval(of: .day, for: currentDate)?.end {
+            let task = await fetchFirstActiveTask()
+            entries.append(SimpleEntry(date: tomorrow, configuration: configuration, task: task))
+        }
+        
+        // Use after policy to refresh 30 minutes after the last entry
+        let lastEntryDate = entries.last?.date ?? currentDate
+        let refreshDate = calendar.date(byAdding: .minute, value: 30, to: lastEntryDate) ?? lastEntryDate
+        
+        return Timeline(entries: entries, policy: .after(refreshDate))
     }
 
 //    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
@@ -95,7 +112,6 @@ struct VenjaWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VenjaWidgetEntryView(entry: entry)
-//                .containerBackground(entry.task?.missedCount ?? 0 > 0 ? Color.red : Color(UIColor.tertiarySystemFill), for: .widget)
                 .containerBackground(for: .widget) {
                     if let _ = entry.task {
                         Color.red

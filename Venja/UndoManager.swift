@@ -8,7 +8,7 @@
 import Foundation
 
 struct UndoAction {
-    let task: Task
+    let task: VTask
     let previousDate: Date?
     let previousMissedCount: Int
     let timestamp: Date
@@ -23,7 +23,7 @@ class TaskUndoManager {
         !undoStack.isEmpty
     }
     
-    func recordCompletion(task: Task, previousDate: Date?, previousMissedCount: Int) {
+    func recordCompletion(task: VTask, previousDate: Date?, previousMissedCount: Int) {
         let action = UndoAction(
             task: task,
             previousDate: previousDate,

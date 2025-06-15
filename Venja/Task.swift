@@ -29,7 +29,7 @@ enum ScheduleUnit: String, Codable, CaseIterable {
 }
 
 @Model
-final class Task {
+final class VTask {
     var name: String = ""
     var schedulePeriod: Int = 0
     private var scheduleUnitRawValue: String = ScheduleUnit.days.rawValue
