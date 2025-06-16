@@ -13,6 +13,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VTask.creationDate) private var tasks: [VTask]
     @State private var showingConfiguration = false
+    @State private var showingRescheduleOneOff = false
     @State private var undoManager = TaskUndoManager()
     @State private var showingUndoAlert = false
     @State private var lastUndoAction: UndoAction?
@@ -75,20 +76,33 @@ struct ContentView: View {
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingConfiguration = true }) {
-                        Image(systemName: "gear")
+                    HStack {
+                        Button("One Off") {
+                            showingRescheduleOneOff = true
+                        }
+                        Button(action: { showingConfiguration = true }) {
+                            Image(systemName: "gear")
+                        }
                     }
                 }
                 #else
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showingConfiguration = true }) {
-                        Image(systemName: "gear")
+                    HStack {
+                        Button("One Off") {
+                            showingRescheduleOneOff = true
+                        }
+                        Button(action: { showingConfiguration = true }) {
+                            Image(systemName: "gear")
+                        }
                     }
                 }
                 #endif
             }
             .sheet(isPresented: $showingConfiguration) {
                 ConfigurationView()
+            }
+            .sheet(isPresented: $showingRescheduleOneOff) {
+                RescheduleOneOffView()
             }
             .onAppear {
                 updateMissedCounts()
