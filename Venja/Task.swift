@@ -36,6 +36,7 @@ final class VTask {
     var creationDate: Date = Date()
     var lastCompletedDate: Date? = nil
     var missedCount: Int = 0
+    var isRepeating: Bool = true
     
     var scheduleUnit: ScheduleUnit {
         get {
@@ -46,16 +47,22 @@ final class VTask {
         }
     }
     
-    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date()) {
+    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date(), isRepeating: Bool = true) {
         self.name = name
         self.schedulePeriod = schedulePeriod
         self.scheduleUnitRawValue = scheduleUnit.rawValue
         self.creationDate = creationDate
         self.lastCompletedDate = nil
         self.missedCount = 0
+        self.isRepeating = isRepeating
     }
     
     var nextDueDate: Date {
+        if !isRepeating {
+            // For non-repeating tasks, they're due on creation date if not completed
+            return lastCompletedDate != nil ? Date.distantFuture : creationDate
+        }
+        
         let referenceDate = lastCompletedDate ?? creationDate
         let calendar = Calendar.current
         
@@ -63,6 +70,10 @@ final class VTask {
     }
     
     var isOverdue: Bool {
+        if !isRepeating && lastCompletedDate != nil {
+            // Completed non-repeating tasks are never overdue
+            return false
+        }
         return nextDueDate < Date()
     }
     
@@ -84,6 +95,12 @@ final class VTask {
     }
     
     func updateMissedCount() {
+        // Non-repeating tasks don't have missed counts
+        if !isRepeating {
+            missedCount = 0
+            return
+        }
+        
         guard isOverdue else {
             missedCount = 0
             return

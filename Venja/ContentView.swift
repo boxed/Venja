@@ -19,6 +19,10 @@ struct ContentView: View {
     
     var activeTasks: [VTask] {
         tasks.filter { task in
+            // Exclude completed non-repeating tasks
+            if !task.isRepeating && task.lastCompletedDate != nil {
+                return false
+            }
             let calendar = Calendar.current
             return calendar.isDateInToday(task.nextDueDate) || task.isOverdue
         }.sorted { 

@@ -28,9 +28,15 @@ struct ConfigurationView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(task.name)
                                     .font(.headline)
-                                Text("Every \(task.schedulePeriod) \(task.scheduleUnit.rawValue.lowercased())")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                if task.isRepeating {
+                                    Text("Every \(task.schedulePeriod) \(task.scheduleUnit.rawValue.lowercased())")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("One-time task")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                                 if let lastCompleted = task.lastCompletedDate {
                                     Text("Last completed: \(lastCompleted.formatted(date: .abbreviated, time: .omitted))")
                                         .font(.caption2)
@@ -101,6 +107,7 @@ struct AddTaskView: View {
     @State private var schedulePeriod = 1
     @State private var scheduleUnit = ScheduleUnit.days
     @State private var creationDate = Date()
+    @State private var isRepeating = true
     @FocusState private var isTaskNameFocused: Bool
     
     var body: some View {
@@ -112,19 +119,23 @@ struct AddTaskView: View {
                 }
                 
                 Section("Schedule") {
-                    Picker("Repeat every", selection: $schedulePeriod) {
-                        ForEach(1...365, id: \.self) { number in
-                            Text("\(number)")
-                        }
-                    }
-                    .pickerStyle(.menu)
+                    Toggle("Repeating Task", isOn: $isRepeating)
                     
-                    Picker("Unit", selection: $scheduleUnit) {
-                        ForEach(ScheduleUnit.allCases, id: \.self) { unit in
-                            Text(unit.rawValue)
+                    if isRepeating {
+                        Picker("Repeat every", selection: $schedulePeriod) {
+                            ForEach(1...365, id: \.self) { number in
+                                Text("\(number)")
+                            }
                         }
+                        .pickerStyle(.menu)
+                        
+                        Picker("Unit", selection: $scheduleUnit) {
+                            ForEach(ScheduleUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
                 }
                 
                 Section("Creation Date") {
@@ -172,7 +183,7 @@ struct AddTaskView: View {
     }
     
     private func addTask() {
-        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate)
+        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate, isRepeating: isRepeating)
         modelContext.insert(newTask)
         dismiss()
     }
@@ -187,6 +198,7 @@ struct EditTaskView: View {
     @State private var schedulePeriod: Int
     @State private var scheduleUnit: ScheduleUnit
     @State private var creationDate: Date
+    @State private var isRepeating: Bool
     @FocusState private var isTaskNameFocused: Bool
     
     init(task: VTask) {
@@ -195,6 +207,7 @@ struct EditTaskView: View {
         _schedulePeriod = State(initialValue: task.schedulePeriod)
         _scheduleUnit = State(initialValue: task.scheduleUnit)
         _creationDate = State(initialValue: task.creationDate)
+        _isRepeating = State(initialValue: task.isRepeating)
     }
     
     var body: some View {
@@ -206,19 +219,23 @@ struct EditTaskView: View {
                 }
                 
                 Section("Schedule") {
-                    Picker("Repeat every", selection: $schedulePeriod) {
-                        ForEach(1...365, id: \.self) { number in
-                            Text("\(number)")
-                        }
-                    }
-                    .pickerStyle(.menu)
+                    Toggle("Repeating Task", isOn: $isRepeating)
                     
-                    Picker("Unit", selection: $scheduleUnit) {
-                        ForEach(ScheduleUnit.allCases, id: \.self) { unit in
-                            Text(unit.rawValue)
+                    if isRepeating {
+                        Picker("Repeat every", selection: $schedulePeriod) {
+                            ForEach(1...365, id: \.self) { number in
+                                Text("\(number)")
+                            }
                         }
+                        .pickerStyle(.menu)
+                        
+                        Picker("Unit", selection: $scheduleUnit) {
+                            ForEach(ScheduleUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
                 }
                 
                 Section("Creation Date") {
@@ -270,6 +287,7 @@ struct EditTaskView: View {
         task.schedulePeriod = schedulePeriod
         task.scheduleUnit = scheduleUnit
         task.creationDate = creationDate
+        task.isRepeating = isRepeating
         dismiss()
     }
 }
