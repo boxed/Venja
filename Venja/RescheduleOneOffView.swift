@@ -61,6 +61,9 @@ struct RescheduleOneOffView: View {
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 300)
+        #endif
     }
     
     private func rescheduleTask(_ task: VTask) {
