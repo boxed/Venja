@@ -93,14 +93,15 @@ struct VenjaWidgetEntryView : View {
                     HStack(spacing: 4) {
                         if task.missedCount > 0 {
                             Image(systemName: "exclamationmark.circle.fill")
-                                .font(.caption2)
+                                .font(widgetFamily == .systemSmall ? .footnote : .body)
                                 .foregroundColor(.white)
                         }
                         
                         Text(task.name)
-                            .font(widgetFamily == .systemSmall ? .caption : .subheadline)
+                            .font(widgetFamily == .systemSmall ? .body : .title3)
                             .foregroundColor(task.missedCount > 0 ? .white : .primary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -108,8 +109,9 @@ struct VenjaWidgetEntryView : View {
                 
                 if entry.tasks.count > maxTasksToShow {
                     Text("+\(entry.tasks.count - maxTasksToShow) more")
-                        .font(.caption2)
+                        .font(.footnote)
                         .foregroundColor(.secondary)
+                        .minimumScaleFactor(0.7)
                 }
                 
                 Spacer(minLength: 0)
@@ -117,15 +119,18 @@ struct VenjaWidgetEntryView : View {
             .padding(0)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else {
-            VStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.largeTitle)
-                    .foregroundColor(.green)
-                Text("Done!")
-                    .font(.headline)
-                    .foregroundColor(.green)
+            GeometryReader { geometry in
+                VStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.4))
+                        .foregroundColor(.green)
+                    Text("Done!")
+                        .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.2))
+                        .foregroundColor(.green)
+                        .minimumScaleFactor(0.5)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -173,6 +178,11 @@ extension Provider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days"),
+        WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days"),
+        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks")
+    ])
+    SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
+        WidgetTaskData(name: "Take vitamins with a long title", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days"),
         WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days"),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks")
     ])
