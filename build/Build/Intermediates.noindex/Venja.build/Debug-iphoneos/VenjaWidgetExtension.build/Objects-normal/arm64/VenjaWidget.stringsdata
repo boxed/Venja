@@ -1,0 +1,24 @@
+{
+  "source": "/Users/boxed/Projects/Venja/VenjaWidget/VenjaWidget.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "+%lld more",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done!",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 124
+        }
+      }
+    ]
+  },
+  "version": 1
+}

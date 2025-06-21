@@ -10,7 +10,16 @@
       "Bash(swift:*)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(open:*)",
+      "Bash(xcrun devicectl list:*)",
+      "Bash(xcrun devicectl device install:*)",
+      "Bash(xcrun devicectl device process launch:*)",
+      "Bash(xcrun devicectl device process list:*)",
+      "Bash(xcrun devicectl device process:*)",
+      "Bash(xcrun devicectl device log stream:*)"
     ],
     "deny": []
   }

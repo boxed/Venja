@@ -156,19 +156,21 @@ struct ContentView: View {
     private func saveCurrentTaskForWidget() {
         let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
         
-        if let firstTask = activeTasks.first {
-            let taskData = WidgetTaskData(
-                name: firstTask.name,
-                missedCount: firstTask.missedCount,
-                schedulePeriod: firstTask.schedulePeriod,
-                scheduleUnit: firstTask.scheduleUnit.rawValue
-            )
+        if !activeTasks.isEmpty {
+            let tasksData = activeTasks.map { task in
+                WidgetTaskData(
+                    name: task.name,
+                    missedCount: task.missedCount,
+                    schedulePeriod: task.schedulePeriod,
+                    scheduleUnit: task.scheduleUnit.rawValue
+                )
+            }
             
-            if let encoded = try? JSONEncoder().encode(taskData) {
-                userDefaults.set(encoded, forKey: "currentTask")
+            if let encoded = try? JSONEncoder().encode(tasksData) {
+                userDefaults.set(encoded, forKey: "activeTasks")
             }
         } else {
-            userDefaults.removeObject(forKey: "currentTask")
+            userDefaults.removeObject(forKey: "activeTasks")
         }
         
         // Reload widget timelines

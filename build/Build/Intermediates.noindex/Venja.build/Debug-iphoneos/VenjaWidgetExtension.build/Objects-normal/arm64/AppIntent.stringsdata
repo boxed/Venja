@@ -1,0 +1,24 @@
+{
+  "source": "/Users/boxed/Projects/Venja/VenjaWidget/AppIntent.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Configuration",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Shows your most urgent task from Venja.",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 13
+        }
+      }
+    ]
+  },
+  "version": 1
+}
