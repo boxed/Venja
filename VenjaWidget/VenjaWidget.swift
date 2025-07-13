@@ -25,30 +25,49 @@ struct Provider: AppIntentTimelineProvider {
         let currentDate = Date()
         let calendar = Calendar.current
         
-        // Create entries for the next 24 hours at specific intervals
-        // First entry is immediate
-        let tasks = await fetchActiveTasks()
-        entries.append(SimpleEntry(date: currentDate, configuration: configuration, tasks: tasks))
+        // First entry is immediate with current tasks
+        let currentTasks = await fetchActiveTasks()
+        entries.append(SimpleEntry(date: currentDate, configuration: configuration, tasks: currentTasks))
         
-        // Add entries every 30 minutes for the next 4 hours
-        for halfHourOffset in 1...8 {
-            if let entryDate = calendar.date(byAdding: .minute, value: halfHourOffset * 30, to: currentDate) {
-                let tasks = await fetchActiveTasks()
-                entries.append(SimpleEntry(date: entryDate, configuration: configuration, tasks: tasks))
+        // Calculate midnight for today and tomorrow
+        let startOfToday = calendar.startOfDay(for: currentDate)
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        
+        // If we haven't passed midnight yet today, add an entry for midnight
+        if currentDate < startOfTomorrow {
+            // Add an entry 1 second after midnight to ensure new day calculation
+            let justAfterMidnight = startOfTomorrow.addingTimeInterval(1)
+            entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: []))
+        }
+        
+        // Add entries for the next few midnights (up to 3 days)
+        for dayOffset in 1...3 {
+            if let futureDay = calendar.date(byAdding: .day, value: dayOffset, to: startOfTomorrow) {
+                let justAfterMidnight = futureDay.addingTimeInterval(1)
+                entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: []))
             }
         }
         
-        // Add an entry at midnight to refresh for the new day
-        if let tomorrow = calendar.dateInterval(of: .day, for: currentDate)?.end {
-            let tasks = await fetchActiveTasks()
-            entries.append(SimpleEntry(date: tomorrow, configuration: configuration, tasks: tasks))
+        // Also add some entries during the day for responsiveness
+        // Add entries every 2 hours for today
+        var nextUpdate = currentDate
+        while nextUpdate < startOfTomorrow {
+            nextUpdate = calendar.date(byAdding: .hour, value: 2, to: nextUpdate) ?? startOfTomorrow
+            if nextUpdate < startOfTomorrow {
+                entries.append(SimpleEntry(date: nextUpdate, configuration: configuration, tasks: []))
+            }
         }
         
-        // Use after policy to refresh 30 minutes after the last entry
-        let lastEntryDate = entries.last?.date ?? currentDate
-        let refreshDate = calendar.date(byAdding: .minute, value: 30, to: lastEntryDate) ?? lastEntryDate
+        // Sort entries by date and remove duplicates
+        entries.sort { $0.date < $1.date }
+        entries = entries.reduce(into: [SimpleEntry]()) { result, entry in
+            if result.isEmpty || abs(result.last!.date.timeIntervalSince(entry.date)) > 60 {
+                result.append(entry)
+            }
+        }
         
-        return Timeline(entries: entries, policy: .after(refreshDate))
+        // Use atEnd policy to ensure we get called again when entries run out
+        return Timeline(entries: entries, policy: .atEnd)
     }
 
 //    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
@@ -67,6 +86,49 @@ struct WidgetTaskData: Codable {
     let missedCount: Int
     let schedulePeriod: Int
     let scheduleUnit: String
+    let creationDate: Date
+    let lastCompletedDate: Date?
+    let isRepeating: Bool
+    
+    var nextDueDate: Date {
+        if !isRepeating {
+            return lastCompletedDate != nil ? Date.distantFuture : creationDate
+        }
+        
+        let referenceDate = lastCompletedDate ?? creationDate
+        let calendar = Calendar.current
+        
+        let component: Calendar.Component
+        switch scheduleUnit {
+        case "Days":
+            component = .day
+        case "Weeks":
+            component = .weekOfYear
+        case "Months":
+            component = .month
+        case "Years":
+            component = .year
+        default:
+            component = .day
+        }
+        
+        return calendar.date(byAdding: component, value: schedulePeriod, to: referenceDate) ?? referenceDate
+    }
+    
+    var isOverdue: Bool {
+        if !isRepeating && lastCompletedDate != nil {
+            return false
+        }
+        return nextDueDate < Date()
+    }
+    
+    func isActiveForDate(_ date: Date) -> Bool {
+        if !isRepeating && lastCompletedDate != nil {
+            return false
+        }
+        let calendar = Calendar.current
+        return calendar.isDate(nextDueDate, inSameDayAs: date) || (nextDueDate < date)
+    }
 }
 
 struct VenjaWidgetEntryView : View {
@@ -164,12 +226,32 @@ extension Provider {
         // Read task data from UserDefaults shared between app and widget
         let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
         
-        guard let tasksData = userDefaults.data(forKey: "activeTasks"),
-              let tasks = try? JSONDecoder().decode([WidgetTaskData].self, from: tasksData) else {
+        // Try new key first, fall back to old key for backward compatibility
+        let tasksData: Data?
+        if let allTasksData = userDefaults.data(forKey: "allTasks") {
+            tasksData = allTasksData
+        } else {
+            tasksData = userDefaults.data(forKey: "activeTasks")
+        }
+        
+        guard let data = tasksData,
+              let tasks = try? JSONDecoder().decode([WidgetTaskData].self, from: data) else {
             return []
         }
         
-        return tasks
+        // Filter for active tasks based on the current date
+        let currentDate = Date()
+        let activeTasks = tasks.filter { task in
+            task.isActiveForDate(currentDate)
+        }.sorted { task1, task2 in
+            // Sort by missed count (descending), then by next due date (ascending)
+            if task1.missedCount != task2.missedCount {
+                return task1.missedCount > task2.missedCount
+            }
+            return task1.nextDueDate < task2.nextDueDate
+        }
+        
+        return activeTasks
     }
 }
 
@@ -177,17 +259,26 @@ extension Provider {
     VenjaWidget()
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
-        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days"),
-        WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days"),
-        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks")
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
+                      schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
+                      lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
-        WidgetTaskData(name: "Take vitamins with a long title", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days"),
-        WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days"),
-        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks")
+        WidgetTaskData(name: "Take vitamins with a long title", missedCount: 0, schedulePeriod: 1, 
+                      scheduleUnit: "Days", creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
+                      schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
+                      lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
-        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days")
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }

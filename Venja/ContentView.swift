@@ -156,22 +156,25 @@ struct ContentView: View {
     private func saveCurrentTaskForWidget() {
         let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
         
-        if !activeTasks.isEmpty {
-            let tasksData = activeTasks.map { task in
-                WidgetTaskData(
-                    name: task.name,
-                    missedCount: task.missedCount,
-                    schedulePeriod: task.schedulePeriod,
-                    scheduleUnit: task.scheduleUnit.rawValue
-                )
-            }
-            
-            if let encoded = try? JSONEncoder().encode(tasksData) {
-                userDefaults.set(encoded, forKey: "activeTasks")
-            }
-        } else {
-            userDefaults.removeObject(forKey: "activeTasks")
+        // Save all tasks, not just active ones
+        let tasksData = tasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
+            )
         }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Keep the old key for backward compatibility temporarily
+        userDefaults.removeObject(forKey: "activeTasks")
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
@@ -183,6 +186,9 @@ struct WidgetTaskData: Codable {
     let missedCount: Int
     let schedulePeriod: Int
     let scheduleUnit: String
+    let creationDate: Date
+    let lastCompletedDate: Date?
+    let isRepeating: Bool
 }
 
 struct TaskCard: View {

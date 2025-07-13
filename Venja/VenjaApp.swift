@@ -75,7 +75,20 @@ struct VenjaApp: App {
     
     private func scheduleAppRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: "net.kodare.Venja.refresh")
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 minutes
+        
+        // Calculate time until next midnight
+        let calendar = Calendar.current
+        let now = Date()
+        let tomorrow = calendar.startOfDay(for: now).addingTimeInterval(86400) // Next midnight
+        let timeUntilMidnight = tomorrow.timeIntervalSince(now)
+        
+        // Schedule for 5 minutes before midnight if it's more than 5 minutes away
+        // Otherwise schedule for 15 minutes from now
+        if timeUntilMidnight > 300 { // More than 5 minutes until midnight
+            request.earliestBeginDate = tomorrow.addingTimeInterval(-300) // 5 minutes before midnight
+        } else {
+            request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 minutes from now
+        }
         
         do {
             try BGTaskScheduler.shared.submit(request)
@@ -118,31 +131,27 @@ struct VenjaApp: App {
     
     private func updateWidgetData(tasks: [VTask]) {
         let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
-        let calendar = Calendar.current
         
-        let activeTasks = tasks.filter { task in
-            calendar.isDateInToday(task.nextDueDate) || task.isOverdue
-        }.sorted { 
-            if $0.missedCount != $1.missedCount {
-                return $0.missedCount > $1.missedCount
-            }
-            return $0.nextDueDate < $1.nextDueDate
-        }
-        
-        if let firstTask = activeTasks.first {
-            let taskData = WidgetTaskData(
-                name: firstTask.name,
-                missedCount: firstTask.missedCount,
-                schedulePeriod: firstTask.schedulePeriod,
-                scheduleUnit: firstTask.scheduleUnit.rawValue
+        // Save all tasks with full data for widget to calculate active tasks
+        let tasksData = tasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
             )
-            
-            if let encoded = try? JSONEncoder().encode(taskData) {
-                userDefaults.set(encoded, forKey: "currentTask")
-            }
-        } else {
-            userDefaults.removeObject(forKey: "currentTask")
         }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Clean up old keys
+        userDefaults.removeObject(forKey: "currentTask")
+        userDefaults.removeObject(forKey: "activeTasks")
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
