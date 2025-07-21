@@ -19,7 +19,11 @@
       "Bash(xcrun devicectl device process launch:*)",
       "Bash(xcrun devicectl device process list:*)",
       "Bash(xcrun devicectl device process:*)",
-      "Bash(xcrun devicectl device log stream:*)"
+      "Bash(xcrun devicectl device log stream:*)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(xcrun xctrace:*)",
+      "Bash(xcrun simctl install:*)",
+      "Bash(xcrun simctl launch:*)"
     ],
     "deny": []
   }

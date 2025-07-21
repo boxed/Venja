@@ -25,8 +25,24 @@ struct Provider: AppIntentTimelineProvider {
         let currentDate = Date()
         let calendar = Calendar.current
         
+        // Fetch ALL tasks once, not just currently active
+        let allTasks = await fetchAllTasks()
+        
+        // Helper function to get active tasks for a specific date
+        func getActiveTasksForDate(_ date: Date) -> [WidgetTaskData] {
+            return allTasks.filter { task in
+                task.isActiveForDate(date)
+            }.sorted { task1, task2 in
+                // Sort by missed count (descending), then by next due date (ascending)
+                if task1.missedCount != task2.missedCount {
+                    return task1.missedCount > task2.missedCount
+                }
+                return task1.nextDueDate < task2.nextDueDate
+            }
+        }
+        
         // First entry is immediate with current tasks
-        let currentTasks = await fetchActiveTasks()
+        let currentTasks = getActiveTasksForDate(currentDate)
         entries.append(SimpleEntry(date: currentDate, configuration: configuration, tasks: currentTasks))
         
         // Calculate midnight for today and tomorrow
@@ -37,14 +53,16 @@ struct Provider: AppIntentTimelineProvider {
         if currentDate < startOfTomorrow {
             // Add an entry 1 second after midnight to ensure new day calculation
             let justAfterMidnight = startOfTomorrow.addingTimeInterval(1)
-            entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: []))
+            let midnightTasks = getActiveTasksForDate(justAfterMidnight)
+            entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: midnightTasks))
         }
         
         // Add entries for the next few midnights (up to 3 days)
         for dayOffset in 1...3 {
             if let futureDay = calendar.date(byAdding: .day, value: dayOffset, to: startOfTomorrow) {
                 let justAfterMidnight = futureDay.addingTimeInterval(1)
-                entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: []))
+                let futureTasks = getActiveTasksForDate(justAfterMidnight)
+                entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: futureTasks))
             }
         }
         
@@ -54,7 +72,8 @@ struct Provider: AppIntentTimelineProvider {
         while nextUpdate < startOfTomorrow {
             nextUpdate = calendar.date(byAdding: .hour, value: 2, to: nextUpdate) ?? startOfTomorrow
             if nextUpdate < startOfTomorrow {
-                entries.append(SimpleEntry(date: nextUpdate, configuration: configuration, tasks: []))
+                let updateTasks = getActiveTasksForDate(nextUpdate)
+                entries.append(SimpleEntry(date: nextUpdate, configuration: configuration, tasks: updateTasks))
             }
         }
         
@@ -222,7 +241,7 @@ struct VenjaWidget: Widget {
 
 
 extension Provider {
-    func fetchActiveTasks() async -> [WidgetTaskData] {
+    func fetchAllTasks() async -> [WidgetTaskData] {
         // Read task data from UserDefaults shared between app and widget
         let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
         
@@ -238,6 +257,12 @@ extension Provider {
               let tasks = try? JSONDecoder().decode([WidgetTaskData].self, from: data) else {
             return []
         }
+        
+        return tasks
+    }
+    
+    func fetchActiveTasks() async -> [WidgetTaskData] {
+        let tasks = await fetchAllTasks()
         
         // Filter for active tasks based on the current date
         let currentDate = Date()

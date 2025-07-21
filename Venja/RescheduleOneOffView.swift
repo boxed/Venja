@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct RescheduleOneOffView: View {
     @Environment(\.modelContext) private var modelContext
@@ -70,10 +71,35 @@ struct RescheduleOneOffView: View {
         task.lastCompletedDate = nil
         do {
             try modelContext.save()
+            saveTasksForWidget()
             dismiss()
         } catch {
             print("Failed to reschedule task: \(error)")
         }
+    }
+    
+    private func saveTasksForWidget() {
+        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+        
+        // Save all tasks for the widget
+        let tasksData = allTasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
+            )
+        }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

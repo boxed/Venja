@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct ConfigurationView: View {
     @Environment(\.modelContext) private var modelContext
@@ -95,7 +96,32 @@ struct ConfigurationView: View {
             for index in offsets {
                 modelContext.delete(tasks[index])
             }
+            saveTasksForWidget()
         }
+    }
+    
+    private func saveTasksForWidget() {
+        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+        
+        // Save all tasks for the widget
+        let tasksData = tasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
+            )
+        }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
@@ -185,7 +211,35 @@ struct AddTaskView: View {
     private func addTask() {
         let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate, isRepeating: isRepeating)
         modelContext.insert(newTask)
+        saveTasksForWidget()
         dismiss()
+    }
+    
+    private func saveTasksForWidget() {
+        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+        
+        // Fetch all tasks to save for widget
+        let descriptor = FetchDescriptor<VTask>()
+        let allTasks = (try? modelContext.fetch(descriptor)) ?? []
+        
+        let tasksData = allTasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
+            )
+        }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
@@ -288,7 +342,35 @@ struct EditTaskView: View {
         task.scheduleUnit = scheduleUnit
         task.creationDate = creationDate
         task.isRepeating = isRepeating
+        saveTasksForWidget()
         dismiss()
+    }
+    
+    private func saveTasksForWidget() {
+        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+        
+        // Fetch all tasks to save for widget
+        let descriptor = FetchDescriptor<VTask>()
+        let allTasks = (try? modelContext.fetch(descriptor)) ?? []
+        
+        let tasksData = allTasks.map { task in
+            WidgetTaskData(
+                name: task.name,
+                missedCount: task.missedCount,
+                schedulePeriod: task.schedulePeriod,
+                scheduleUnit: task.scheduleUnit.rawValue,
+                creationDate: task.creationDate,
+                lastCompletedDate: task.lastCompletedDate,
+                isRepeating: task.isRepeating
+            )
+        }
+        
+        if let encoded = try? JSONEncoder().encode(tasksData) {
+            userDefaults.set(encoded, forKey: "allTasks")
+        }
+        
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
