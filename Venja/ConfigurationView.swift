@@ -16,6 +16,8 @@ struct ConfigurationView: View {
     @State private var showingAddTask = false
     @State private var taskToEdit: VTask?
     @State private var showingEditTask = false
+    @State private var taskToShowHistory: VTask?
+    @State private var showingHistory = false
     
     var body: some View {
         NavigationStack {
@@ -43,8 +45,22 @@ struct ConfigurationView: View {
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                 }
+                                if task.totalPoints > 0 {
+                                    Text("\(task.totalPoints) total points")
+                                        .font(.caption2)
+                                        .foregroundColor(.blue)
+                                }
                             }
                             Spacer()
+                            
+                            Button(action: {
+                                taskToShowHistory = task
+                                showingHistory = true
+                            }) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundColor(.blue)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
                         }
                         .padding(.vertical, 4)
                     }
@@ -83,6 +99,11 @@ struct ConfigurationView: View {
             .sheet(isPresented: $showingEditTask) {
                 if let task = taskToEdit {
                     EditTaskView(task: task)
+                }
+            }
+            .sheet(isPresented: $showingHistory) {
+                if let task = taskToShowHistory {
+                    TaskHistoryView(task: task)
                 }
             }
         }

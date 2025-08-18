@@ -19,6 +19,7 @@ struct VenjaApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             VTask.self,
+            CompletionHistory.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
