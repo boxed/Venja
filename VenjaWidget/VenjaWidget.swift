@@ -153,17 +153,26 @@ struct WidgetTaskData: Codable {
 struct VenjaWidgetEntryView : View {
     var entry: Provider.Entry
     @Environment(\.widgetFamily) var widgetFamily
+    @Environment(\.colorScheme) var colorScheme
     
     var maxTasksToShow: Int {
         switch widgetFamily {
         case .systemSmall:
-            return 3
+            return 4
         case .systemMedium:
             return 5
         case .systemLarge:
             return 12
         default:
             return 3
+        }
+    }
+    
+    var textColor: Color {
+        return if colorScheme == ColorScheme.dark {
+            Color.black
+        } else {
+            Color.white
         }
     }
 
@@ -175,12 +184,12 @@ struct VenjaWidgetEntryView : View {
                         if task.missedCount > 0 {
                             Image(systemName: "exclamationmark.circle.fill")
                                 .font(widgetFamily == .systemSmall ? .footnote : .body)
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                         }
                         
                         Text(task.name)
                             .font(widgetFamily == .systemSmall ? .body : .title3)
-                            .foregroundColor(task.missedCount > 0 ? .white : .primary)
+                            .foregroundColor(textColor)
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                             .truncationMode(.tail)
@@ -191,7 +200,7 @@ struct VenjaWidgetEntryView : View {
                 if entry.tasks.count > maxTasksToShow {
                     Text("+\(entry.tasks.count - maxTasksToShow) more")
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(textColor)
                         .minimumScaleFactor(0.7)
                 }
                 
@@ -290,6 +299,10 @@ extension Provider {
                       schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
                       lastCompletedDate: nil, isRepeating: true),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+        WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
                       creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
