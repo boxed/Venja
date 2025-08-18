@@ -1,4 +1,0 @@
-Target dependency graph (2 targets)
-Target 'Venja' in project 'Venja'
-➜ Explicit dependency on target 'VenjaWidgetExtension' in project 'Venja'
-Target 'VenjaWidgetExtension' in project 'Venja' (no dependencies)
