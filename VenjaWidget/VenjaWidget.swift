@@ -20,73 +20,32 @@ struct Provider: AppIntentTimelineProvider {
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-        
         let currentDate = Date()
         let calendar = Calendar.current
         
-        // Fetch ALL tasks once, not just currently active
+        // Fetch current tasks
         let allTasks = await fetchAllTasks()
-        
-        // Helper function to get active tasks for a specific date
-        func getActiveTasksForDate(_ date: Date) -> [WidgetTaskData] {
-            return allTasks.filter { task in
-                task.isActiveForDate(date)
-            }.sorted { task1, task2 in
-                // Sort by missed count (descending), then by next due date (ascending)
-                if task1.missedCount != task2.missedCount {
-                    return task1.missedCount > task2.missedCount
-                }
-                return task1.nextDueDate < task2.nextDueDate
+        let activeTasks = allTasks.filter { task in
+            task.isActiveForDate(currentDate)
+        }.sorted { task1, task2 in
+            // Sort by missed count (descending), then by next due date (ascending)
+            if task1.missedCount != task2.missedCount {
+                return task1.missedCount > task2.missedCount
             }
+            return task1.nextDueDate < task2.nextDueDate
         }
         
-        // First entry is immediate with current tasks
-        let currentTasks = getActiveTasksForDate(currentDate)
-        entries.append(SimpleEntry(date: currentDate, configuration: configuration, tasks: currentTasks))
+        // Create single entry for current state
+        let entry = SimpleEntry(date: currentDate, configuration: configuration, tasks: activeTasks)
         
-        // Calculate midnight for today and tomorrow
-        let startOfToday = calendar.startOfDay(for: currentDate)
-        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        // Calculate when to reload the timeline
+        let startOfTomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: currentDate)!)
         
-        // If we haven't passed midnight yet today, add an entry for midnight
-        if currentDate < startOfTomorrow {
-            // Add an entry 1 second after midnight to ensure new day calculation
-            let justAfterMidnight = startOfTomorrow.addingTimeInterval(1)
-            let midnightTasks = getActiveTasksForDate(justAfterMidnight)
-            entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: midnightTasks))
-        }
+        // Reload timeline at midnight or in 4 hours, whichever comes first
+        // This ensures we refresh at day boundaries and periodically throughout the day
+        let nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
         
-        // Add entries for the next few midnights (up to 3 days)
-        for dayOffset in 1...3 {
-            if let futureDay = calendar.date(byAdding: .day, value: dayOffset, to: startOfTomorrow) {
-                let justAfterMidnight = futureDay.addingTimeInterval(1)
-                let futureTasks = getActiveTasksForDate(justAfterMidnight)
-                entries.append(SimpleEntry(date: justAfterMidnight, configuration: configuration, tasks: futureTasks))
-            }
-        }
-        
-        // Also add some entries during the day for responsiveness
-        // Add entries every 2 hours for today
-        var nextUpdate = currentDate
-        while nextUpdate < startOfTomorrow {
-            nextUpdate = calendar.date(byAdding: .hour, value: 2, to: nextUpdate) ?? startOfTomorrow
-            if nextUpdate < startOfTomorrow {
-                let updateTasks = getActiveTasksForDate(nextUpdate)
-                entries.append(SimpleEntry(date: nextUpdate, configuration: configuration, tasks: updateTasks))
-            }
-        }
-        
-        // Sort entries by date and remove duplicates
-        entries.sort { $0.date < $1.date }
-        entries = entries.reduce(into: [SimpleEntry]()) { result, entry in
-            if result.isEmpty || abs(result.last!.date.timeIntervalSince(entry.date)) > 60 {
-                result.append(entry)
-            }
-        }
-        
-        // Use atEnd policy to ensure we get called again when entries run out
-        return Timeline(entries: entries, policy: .atEnd)
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 
 //    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {

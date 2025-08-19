@@ -11,6 +11,7 @@ import WidgetKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \VTask.creationDate) private var tasks: [VTask]
     @State private var showingConfiguration = false
     @State private var showingRescheduleOneOff = false
@@ -116,6 +117,12 @@ struct ContentView: View {
                 }
                 #endif
             }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .background || newPhase == .inactive {
+                    // Save widget data when app goes to background
+                    saveCurrentTaskForWidget()
+                }
+            }
             .alert("Undo Action", isPresented: $showingUndoAlert) {
                 Button("Undo") {
                     if let action = lastUndoAction {
@@ -171,6 +178,7 @@ struct ContentView: View {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Keep the old key for backward compatibility temporarily

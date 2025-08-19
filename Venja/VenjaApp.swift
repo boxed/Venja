@@ -148,6 +148,7 @@ struct VenjaApp: App {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Clean up old keys

@@ -139,6 +139,7 @@ struct ConfigurationView: View {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Reload widget timelines
@@ -257,6 +258,7 @@ struct AddTaskView: View {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Reload widget timelines
@@ -388,6 +390,7 @@ struct EditTaskView: View {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Reload widget timelines

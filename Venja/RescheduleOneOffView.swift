@@ -96,6 +96,7 @@ struct RescheduleOneOffView: View {
         
         if let encoded = try? JSONEncoder().encode(tasksData) {
             userDefaults.set(encoded, forKey: "allTasks")
+            userDefaults.synchronize() // Force synchronization
         }
         
         // Reload widget timelines
