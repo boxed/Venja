@@ -14,5 +14,6 @@ struct VenjaWidgetBundle: WidgetBundle {
         VenjaWidget()
         VenjaWidgetControl()
         VenjaWidgetLiveActivity()
+        VenjaLockScreenWidget()
     }
 }
