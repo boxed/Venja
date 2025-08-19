@@ -38,7 +38,7 @@ final class VTask {
     var missedCount: Int = 0
     var isRepeating: Bool = true
     @Relationship(deleteRule: .cascade, inverse: \CompletionHistory.task)
-    var completionHistory: [CompletionHistory] = []
+    var completionHistory: [CompletionHistory]? = []
     
     var scheduleUnit: ScheduleUnit {
         get {
@@ -91,15 +91,15 @@ final class VTask {
             completionDate: Date(),
             missedCountAtCompletion: missedCount
         )
-        completionHistory.append(historyEntry)
+        completionHistory!.append(historyEntry)
         
         lastCompletedDate = Date()
         missedCount = 0
     }
     
     func undoCompletion(previousDate: Date?, previousMissedCount: Int) {
-        if !completionHistory.isEmpty {
-            completionHistory.removeLast()
+        if !completionHistory!.isEmpty {
+            completionHistory!.removeLast()
         }
         lastCompletedDate = previousDate
         missedCount = previousMissedCount
@@ -155,11 +155,11 @@ final class VTask {
     }
     
     var totalPoints: Int {
-        completionHistory.reduce(0) { $0 + $1.points }
+        completionHistory!.reduce(0) { $0 + $1.points }
     }
     
     var averagePoints: Double {
-        guard !completionHistory.isEmpty else { return 0 }
-        return Double(totalPoints) / Double(completionHistory.count)
+        guard !completionHistory!.isEmpty else { return 0 }
+        return Double(totalPoints) / Double(completionHistory!.count)
     }
 }

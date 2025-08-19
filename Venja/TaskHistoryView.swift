@@ -13,7 +13,7 @@ struct TaskHistoryView: View {
     @Environment(\.dismiss) private var dismiss
     
     var sortedHistory: [CompletionHistory] {
-        task.completionHistory.sorted { $0.completionDate > $1.completionDate }
+        task.completionHistory!.sorted { $0.completionDate > $1.completionDate }
     }
     
     var body: some View {

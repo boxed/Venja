@@ -10,8 +10,8 @@ import SwiftData
 
 @Model
 final class CompletionHistory {
-    var completionDate: Date
-    var missedCountAtCompletion: Int
+    var completionDate: Date = Date()
+    var missedCountAtCompletion: Int = 0
     var task: VTask?
     
     init(completionDate: Date = Date(), missedCountAtCompletion: Int = 0) {
