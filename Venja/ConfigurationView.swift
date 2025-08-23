@@ -133,7 +133,8 @@ struct ConfigurationView: View {
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
-                isRepeating: task.isRepeating
+                isRepeating: task.isRepeating,
+                totalPoints: task.totalPoints
             )
         }
         
@@ -252,7 +253,8 @@ struct AddTaskView: View {
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
-                isRepeating: task.isRepeating
+                isRepeating: task.isRepeating,
+                totalPoints: task.totalPoints
             )
         }
         
@@ -384,7 +386,8 @@ struct EditTaskView: View {
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
-                isRepeating: task.isRepeating
+                isRepeating: task.isRepeating,
+                totalPoints: task.totalPoints
             )
         }
         

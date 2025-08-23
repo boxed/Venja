@@ -172,7 +172,8 @@ struct ContentView: View {
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
-                isRepeating: task.isRepeating
+                isRepeating: task.isRepeating,
+                totalPoints: task.totalPoints
             )
         }
         
@@ -197,6 +198,7 @@ struct WidgetTaskData: Codable {
     let creationDate: Date
     let lastCompletedDate: Date?
     let isRepeating: Bool
+    let totalPoints: Int
 }
 
 struct TaskCard: View {

@@ -7,14 +7,32 @@
 
 import WidgetKit
 import SwiftUI
+import SwiftData
 
 struct LockScreenProvider: AppIntentTimelineProvider {
+    private var modelContainer: ModelContainer = {
+        let schema = Schema([
+            VTask.self,
+            CompletionHistory.self,
+        ])
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+        
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: [])
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: fetchTasksSync())
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        let tasks = await fetchActiveTasks()
+        let tasks = fetchTasksSync()
         return SimpleEntry(date: Date(), configuration: configuration, tasks: tasks)
     }
     
@@ -22,16 +40,8 @@ struct LockScreenProvider: AppIntentTimelineProvider {
         let currentDate = Date()
         let calendar = Calendar.current
         
-        // Fetch current tasks
-        let allTasks = await fetchAllTasks()
-        let activeTasks = allTasks.filter { task in
-            task.isActiveForDate(currentDate)
-        }.sorted { task1, task2 in
-            if task1.missedCount != task2.missedCount {
-                return task1.missedCount > task2.missedCount
-            }
-            return task1.nextDueDate < task2.nextDueDate
-        }
+        // Fetch current tasks directly from SwiftData
+        let activeTasks = fetchTasksSync()
         
         // Create single entry for current state
         let entry = SimpleEntry(date: currentDate, configuration: configuration, tasks: activeTasks)
@@ -50,23 +60,45 @@ struct LockScreenProvider: AppIntentTimelineProvider {
 struct VenjaLockScreenWidgetCircularView: View {
     var entry: SimpleEntry
     
+    private func circlePosition(for index: Int, total: Int, radius: CGFloat) -> CGPoint {
+        let angle = (2 * .pi / CGFloat(total)) * CGFloat(index) - .pi / 2
+        let x = radius * cos(angle)
+        let y = radius * sin(angle)
+        return CGPoint(x: x, y: y)
+    }
+    
     var body: some View {
         if entry.tasks.isEmpty {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title)
                 .widgetAccentable()
         } else {
-            VStack(spacing: 2) {
-                if let firstTask = entry.tasks.first {
-                    if firstTask.missedCount > 0 {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .font(.caption)
+            GeometryReader { geometry in
+                let size = min(geometry.size.width, geometry.size.height)
+                let center = CGPoint(x: size / 2, y: size / 2)
+                let radius = size * 0.35
+                let circleSize = size * 0.15
+                let maxTasks = 12
+                let tasksToShow = Array(entry.tasks.prefix(maxTasks))
+                
+                ZStack {
+                    ForEach(0..<tasksToShow.count, id: \.self) { index in
+                        let task = tasksToShow[index]
+                        let position = circlePosition(for: index, total: tasksToShow.count, radius: radius)
+                        
+                        Circle()
+                            .fill(task.missedCount > 0 ? Color.primary : Color.clear)
+                            .stroke(Color.primary, lineWidth: 1.5)
+                            .frame(width: circleSize, height: circleSize)
+                            .position(x: center.x + position.x, y: center.y + position.y)
                     }
-                    Text("\(entry.tasks.count)")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Text("tasks")
-                        .font(.caption2)
+                    
+                    // Display total points in the center
+                    let totalPoints = entry.tasks.reduce(0) { $0 + $1.totalPoints }
+                    Text("\(totalPoints)")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .position(x: center.x, y: center.y)
                 }
             }
             .widgetAccentable()
@@ -170,38 +202,49 @@ struct VenjaLockScreenWidget: Widget {
 }
 
 extension LockScreenProvider {
-    func fetchAllTasks() async -> [WidgetTaskData] {
-        let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
+    func fetchTasksSync() -> [WidgetTaskData] {
+        let context = ModelContext(modelContainer)
         
-        let tasksData: Data?
-        if let allTasksData = userDefaults.data(forKey: "allTasks") {
-            tasksData = allTasksData
-        } else {
-            tasksData = userDefaults.data(forKey: "activeTasks")
-        }
-        
-        guard let data = tasksData,
-              let tasks = try? JSONDecoder().decode([WidgetTaskData].self, from: data) else {
+        do {
+            let descriptor = FetchDescriptor<VTask>()
+            let tasks = try context.fetch(descriptor)
+            
+            // Update missed counts for all tasks
+            for task in tasks {
+                task.updateMissedCount()
+            }
+            
+            let activeTasks = tasks.filter { task in
+                // Check if task is active (due today or overdue)
+                if task.isRepeating {
+                    return task.isOverdue || Calendar.current.isDateInToday(task.nextDueDate)
+                } else {
+                    // Non-repeating tasks are active if not completed and due
+                    return task.lastCompletedDate == nil && (task.isOverdue || Calendar.current.isDateInToday(task.nextDueDate))
+                }
+            }.sorted { task1, task2 in
+                if task1.missedCount != task2.missedCount {
+                    return task1.missedCount > task2.missedCount
+                }
+                return task1.nextDueDate < task2.nextDueDate
+            }.map { task in
+                WidgetTaskData(
+                    name: task.name,
+                    missedCount: task.missedCount,
+                    schedulePeriod: task.schedulePeriod,
+                    scheduleUnit: task.scheduleUnit.rawValue,
+                    creationDate: task.creationDate,
+                    lastCompletedDate: task.lastCompletedDate,
+                    isRepeating: task.isRepeating,
+                    totalPoints: task.totalPoints
+                )
+            }
+            
+            return activeTasks
+        } catch {
+            print("Failed to fetch tasks: \(error)")
             return []
         }
-        
-        return tasks
-    }
-    
-    func fetchActiveTasks() async -> [WidgetTaskData] {
-        let tasks = await fetchAllTasks()
-        
-        let currentDate = Date()
-        let activeTasks = tasks.filter { task in
-            task.isActiveForDate(currentDate)
-        }.sorted { task1, task2 in
-            if task1.missedCount != task2.missedCount {
-                return task1.missedCount > task2.missedCount
-            }
-            return task1.nextDueDate < task2.nextDueDate
-        }
-        
-        return activeTasks
     }
 }
 
@@ -210,9 +253,19 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20),
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 5),
+        WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
         WidgetTaskData(name: "Water plants", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days", 
-                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 8)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
@@ -222,9 +275,9 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
         WidgetTaskData(name: "Water plants in the living room", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days", 
-                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 15)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
@@ -234,7 +287,7 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 1, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }

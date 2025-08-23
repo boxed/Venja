@@ -74,6 +74,14 @@
 			);
 			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
 		};
+		AE4E001E2E54E7B900B19D4B /* Exceptions for "Venja" folder in "VenjaWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CompletionHistory.swift,
+				Task.swift,
+			);
+			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -81,6 +89,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				AE4DF7462DF5E324002F6B38 /* Exceptions for "Venja" folder in "Venja" target */,
+				AE4E001E2E54E7B900B19D4B /* Exceptions for "Venja" folder in "VenjaWidgetExtension" target */,
 			);
 			path = Venja;
 			sourceTree = "<group>";

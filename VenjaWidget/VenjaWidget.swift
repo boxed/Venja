@@ -67,6 +67,7 @@ struct WidgetTaskData: Codable {
     let creationDate: Date
     let lastCompletedDate: Date?
     let isRepeating: Bool
+    let totalPoints: Int
     
     var nextDueDate: Date {
         if !isRepeating {
@@ -253,29 +254,29 @@ extension Provider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
         WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
                       schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
-                      lastCompletedDate: nil, isRepeating: true),
+                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins with a long title", missedCount: 0, schedulePeriod: 1, 
-                      scheduleUnit: "Days", creationDate: Date(), lastCompletedDate: nil, isRepeating: true),
+                      scheduleUnit: "Days", creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20),
         WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
                       schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
-                      lastCompletedDate: nil, isRepeating: true),
+                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
