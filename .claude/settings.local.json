@@ -23,7 +23,9 @@
       "Bash(xcrun simctl list:*)",
       "Bash(xcrun xctrace:*)",
       "Bash(xcrun simctl install:*)",
-      "Bash(xcrun simctl launch:*)"
+      "Bash(xcrun simctl launch:*)",
+      "Bash(osascript:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

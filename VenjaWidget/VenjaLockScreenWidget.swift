@@ -59,6 +59,25 @@ struct LockScreenProvider: AppIntentTimelineProvider {
 
 struct VenjaLockScreenWidgetCircularView: View {
     var entry: SimpleEntry
+    @State private var totalPoints: Int = 0
+    
+    var modelContainer: ModelContainer = {
+        let schema = Schema([
+            VTask.self,
+            CompletionHistory.self,
+        ])
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+        
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
     
     private func circlePosition(for index: Int, total: Int, radius: CGFloat) -> CGPoint {
         let angle = (2 * .pi / CGFloat(total)) * CGFloat(index) - .pi / 2
@@ -67,11 +86,32 @@ struct VenjaLockScreenWidgetCircularView: View {
         return CGPoint(x: x, y: y)
     }
     
+    private func calculateTotalPoints() -> Int {
+        let context = ModelContext(modelContainer)
+        do {
+            let descriptor = FetchDescriptor<CompletionHistory>()
+            let completions = try context.fetch(descriptor)
+            return completions.reduce(0) { $0 + $1.points }
+        } catch {
+            print("Failed to fetch completion history: \(error)")
+            return 0
+        }
+    }
+    
     var body: some View {
+        let calculatedPoints = calculateTotalPoints()
+        
         if entry.tasks.isEmpty {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title)
-                .widgetAccentable()
+            if calculatedPoints > 0 {
+                Text("\(calculatedPoints)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .widgetAccentable()
+            } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title)
+                    .widgetAccentable()
+            }
         } else {
             GeometryReader { geometry in
                 let size = min(geometry.size.width, geometry.size.height)
@@ -94,8 +134,7 @@ struct VenjaLockScreenWidgetCircularView: View {
                     }
                     
                     // Display total points in the center
-                    let totalPoints = entry.tasks.reduce(0) { $0 + $1.totalPoints }
-                    Text("\(totalPoints)")
+                    Text("\(calculatedPoints)")
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .position(x: center.x, y: center.y)
