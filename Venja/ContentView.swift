@@ -15,6 +15,7 @@ struct ContentView: View {
     @Query(sort: \VTask.creationDate) private var tasks: [VTask]
     @State private var showingConfiguration = false
     @State private var showingRescheduleOneOff = false
+    @State private var showingAddTask = false
     @State private var undoManager = TaskUndoManager()
     @State private var showingUndoAlert = false
     @State private var lastUndoAction: UndoAction?
@@ -78,6 +79,9 @@ struct ContentView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
+                        Button(action: { showingAddTask = true }) {
+                            Image(systemName: "plus.circle")
+                        }
                         Button("One Off") {
                             showingRescheduleOneOff = true
                         }
@@ -89,6 +93,9 @@ struct ContentView: View {
                 #else
                 ToolbarItem(placement: .primaryAction) {
                     HStack {
+                        Button(action: { showingAddTask = true }) {
+                            Image(systemName: "plus.circle")
+                        }
                         Button("One Off") {
                             showingRescheduleOneOff = true
                         }
@@ -104,6 +111,9 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingRescheduleOneOff) {
                 RescheduleOneOffView()
+            }
+            .sheet(isPresented: $showingAddTask) {
+                AddTaskView()
             }
             .onAppear {
                 updateMissedCounts()
