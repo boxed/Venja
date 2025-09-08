@@ -68,6 +68,24 @@ struct ContentView: View {
                                             saveCurrentTaskForWidget()
                                         }
                                     }
+                                    .contextMenu {
+                                        Button(action: {
+                                            withAnimation {
+                                                let previousDate = task.lastCompletedDate
+                                                let previousMissedCount = task.missedCount
+                                                let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+                                                task.markCompleted(at: yesterday)
+                                                undoManager.recordCompletion(
+                                                    task: task,
+                                                    previousDate: previousDate,
+                                                    previousMissedCount: previousMissedCount
+                                                )
+                                                saveCurrentTaskForWidget()
+                                            }
+                                        }) {
+                                            Label("Completed Yesterday", systemImage: "clock.arrow.circlepath")
+                                        }
+                                    }
                             }
                         }
                         .padding()

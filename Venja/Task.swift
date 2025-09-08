@@ -86,14 +86,14 @@ final class VTask {
         return components.day ?? 0
     }
     
-    func markCompleted() {
+    func markCompleted(at date: Date = Date()) {
         let historyEntry = CompletionHistory(
-            completionDate: Date(),
+            completionDate: date,
             missedCountAtCompletion: missedCount
         )
         completionHistory!.append(historyEntry)
         
-        lastCompletedDate = Date()
+        lastCompletedDate = date
         missedCount = 0
     }
     
