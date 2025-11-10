@@ -143,7 +143,8 @@ struct VenjaApp: App {
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
                 isRepeating: task.isRepeating,
-                totalPoints: task.totalPoints
+                totalPoints: task.totalPoints,
+                scheduledHour: task.scheduledHour
             )
         }
         

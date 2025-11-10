@@ -134,7 +134,8 @@ struct ConfigurationView: View {
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
                 isRepeating: task.isRepeating,
-                totalPoints: task.totalPoints
+                totalPoints: task.totalPoints,
+                scheduledHour: task.scheduledHour
             )
         }
         
@@ -157,6 +158,7 @@ struct AddTaskView: View {
     @State private var scheduleUnit = ScheduleUnit.days
     @State private var creationDate = Date()
     @State private var isRepeating = true
+    @State private var scheduledHour = 0
     @FocusState private var isTaskNameFocused: Bool
     
     var body: some View {
@@ -166,10 +168,10 @@ struct AddTaskView: View {
                     TextField("Task Name", text: $taskName)
                         .focused($isTaskNameFocused)
                 }
-                
+
                 Section("Schedule") {
                     Toggle("Repeating Task", isOn: $isRepeating)
-                    
+
                     if isRepeating {
                         Picker("Repeat every", selection: $schedulePeriod) {
                             ForEach(1...365, id: \.self) { number in
@@ -177,7 +179,7 @@ struct AddTaskView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        
+
                         Picker("Unit", selection: $scheduleUnit) {
                             ForEach(ScheduleUnit.allCases, id: \.self) { unit in
                                 Text(unit.rawValue)
@@ -185,8 +187,15 @@ struct AddTaskView: View {
                         }
                         .pickerStyle(.segmented)
                     }
+
+                    Picker("Time of day", selection: $scheduledHour) {
+                        ForEach(0..<24, id: \.self) { hour in
+                            Text(String(format: "%02d:00", hour))
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
-                
+
                 Section("Creation Date") {
                     DatePicker("Created on", selection: $creationDate, displayedComponents: .date)
                 }
@@ -232,7 +241,7 @@ struct AddTaskView: View {
     }
     
     private func addTask() {
-        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate, isRepeating: isRepeating)
+        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate, isRepeating: isRepeating, scheduledHour: scheduledHour)
         modelContext.insert(newTask)
         saveTasksForWidget()
         dismiss()
@@ -254,7 +263,8 @@ struct AddTaskView: View {
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
                 isRepeating: task.isRepeating,
-                totalPoints: task.totalPoints
+                totalPoints: task.totalPoints,
+                scheduledHour: task.scheduledHour
             )
         }
         
@@ -278,8 +288,9 @@ struct EditTaskView: View {
     @State private var scheduleUnit: ScheduleUnit
     @State private var creationDate: Date
     @State private var isRepeating: Bool
+    @State private var scheduledHour: Int
     @FocusState private var isTaskNameFocused: Bool
-    
+
     init(task: VTask) {
         self.task = task
         _taskName = State(initialValue: task.name)
@@ -287,6 +298,7 @@ struct EditTaskView: View {
         _scheduleUnit = State(initialValue: task.scheduleUnit)
         _creationDate = State(initialValue: task.creationDate)
         _isRepeating = State(initialValue: task.isRepeating)
+        _scheduledHour = State(initialValue: task.scheduledHour)
     }
     
     var body: some View {
@@ -296,10 +308,10 @@ struct EditTaskView: View {
                     TextField("Task Name", text: $taskName)
                         .focused($isTaskNameFocused)
                 }
-                
+
                 Section("Schedule") {
                     Toggle("Repeating Task", isOn: $isRepeating)
-                    
+
                     if isRepeating {
                         Picker("Repeat every", selection: $schedulePeriod) {
                             ForEach(1...365, id: \.self) { number in
@@ -307,7 +319,7 @@ struct EditTaskView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        
+
                         Picker("Unit", selection: $scheduleUnit) {
                             ForEach(ScheduleUnit.allCases, id: \.self) { unit in
                                 Text(unit.rawValue)
@@ -315,8 +327,15 @@ struct EditTaskView: View {
                         }
                         .pickerStyle(.segmented)
                     }
+
+                    Picker("Time of day", selection: $scheduledHour) {
+                        ForEach(0..<24, id: \.self) { hour in
+                            Text(String(format: "%02d:00", hour))
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
-                
+
                 Section("Creation Date") {
                     DatePicker("Created on", selection: $creationDate, displayedComponents: .date)
                 }
@@ -367,6 +386,7 @@ struct EditTaskView: View {
         task.scheduleUnit = scheduleUnit
         task.creationDate = creationDate
         task.isRepeating = isRepeating
+        task.scheduledHour = scheduledHour
         saveTasksForWidget()
         dismiss()
     }
@@ -387,7 +407,8 @@ struct EditTaskView: View {
                 creationDate: task.creationDate,
                 lastCompletedDate: task.lastCompletedDate,
                 isRepeating: task.isRepeating,
-                totalPoints: task.totalPoints
+                totalPoints: task.totalPoints,
+                scheduledHour: task.scheduledHour
             )
         }
         

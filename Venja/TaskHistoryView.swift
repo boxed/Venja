@@ -110,6 +110,7 @@ struct TaskHistoryView: View {
                 }
             }
             .navigationTitle("\(task.name) History")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -118,6 +119,7 @@ struct TaskHistoryView: View {
                     }
                 }
             }
+            #endif
         }
     }
     

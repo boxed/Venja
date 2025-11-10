@@ -275,7 +275,8 @@ extension LockScreenProvider {
                     creationDate: task.creationDate,
                     lastCompletedDate: task.lastCompletedDate,
                     isRepeating: task.isRepeating,
-                    totalPoints: task.totalPoints
+                    totalPoints: task.totalPoints,
+                    scheduledHour: task.scheduledHour
                 )
             }
             
@@ -292,19 +293,19 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25, scheduledHour: 0),
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20, scheduledHour: 0),
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 15, scheduledHour: 0),
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0),
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 5),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 5, scheduledHour: 0),
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0),
         WidgetTaskData(name: "Water plants", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days", 
-                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 8)
+                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 8, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
@@ -314,9 +315,9 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25, scheduledHour: 0),
         WidgetTaskData(name: "Water plants in the living room", missedCount: 2, schedulePeriod: 3, scheduleUnit: "Days", 
-                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 15)
+                      creationDate: Date().addingTimeInterval(-86400 * 10), lastCompletedDate: nil, isRepeating: true, totalPoints: 15, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
@@ -326,7 +327,7 @@ extension LockScreenProvider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 1, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }

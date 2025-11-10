@@ -68,15 +68,22 @@ struct WidgetTaskData: Codable {
     let lastCompletedDate: Date?
     let isRepeating: Bool
     let totalPoints: Int
-    
+    let scheduledHour: Int
+
     var nextDueDate: Date {
-        if !isRepeating {
-            return lastCompletedDate != nil ? Date.distantFuture : creationDate
-        }
-        
-        let referenceDate = lastCompletedDate ?? creationDate
         let calendar = Calendar.current
-        
+
+        if !isRepeating {
+            let baseDate = lastCompletedDate != nil ? Date.distantFuture : creationDate
+            var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            return calendar.date(from: components) ?? baseDate
+        }
+
+        let referenceDate = lastCompletedDate ?? creationDate
+
         let component: Calendar.Component
         switch scheduleUnit {
         case "Days":
@@ -90,8 +97,30 @@ struct WidgetTaskData: Codable {
         default:
             component = .day
         }
-        
-        return calendar.date(byAdding: component, value: schedulePeriod, to: referenceDate) ?? referenceDate
+
+        guard let nextDate = calendar.date(byAdding: component, value: schedulePeriod, to: referenceDate) else {
+            return referenceDate
+        }
+
+        var components = calendar.dateComponents([.year, .month, .day], from: nextDate)
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return nextDate
+        }
+
+        // If setting the hour caused the date to be before or equal to the reference date,
+        // advance by another period to ensure we're always moving forward
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: component, value: schedulePeriod, to: result) else {
+                break
+            }
+            result = advanced
+        }
+
+        return result
     }
     
     var isOverdue: Bool {
@@ -254,29 +283,29 @@ extension Provider {
 } timeline: {
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25, scheduledHour: 0),
         WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
                       schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
-                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
+                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15, scheduledHour: 0),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10),
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks",
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins with a long title", missedCount: 0, schedulePeriod: 1, 
-                      scheduleUnit: "Days", creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20),
+                      scheduleUnit: "Days", creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 20, scheduledHour: 0),
         WidgetTaskData(name: "Water plants in the living room and check soil moisture", missedCount: 2, 
                       schedulePeriod: 3, scheduleUnit: "Days", creationDate: Date().addingTimeInterval(-86400 * 10), 
-                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15),
+                      lastCompletedDate: nil, isRepeating: true, totalPoints: 15, scheduledHour: 0),
         WidgetTaskData(name: "Clean bathroom", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Weeks", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 10, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [
         WidgetTaskData(name: "Take vitamins", missedCount: 0, schedulePeriod: 1, scheduleUnit: "Days", 
-                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25)
+                      creationDate: Date(), lastCompletedDate: nil, isRepeating: true, totalPoints: 25, scheduledHour: 0)
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }

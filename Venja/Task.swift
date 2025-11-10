@@ -37,6 +37,7 @@ final class VTask {
     var lastCompletedDate: Date? = nil
     var missedCount: Int = 0
     var isRepeating: Bool = true
+    var scheduledHour: Int = 0  // Hour of day (0-23) when task is scheduled, default midnight
     @Relationship(deleteRule: .cascade, inverse: \CompletionHistory.task)
     var completionHistory: [CompletionHistory]? = []
     
@@ -49,7 +50,7 @@ final class VTask {
         }
     }
     
-    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date(), isRepeating: Bool = true) {
+    init(name: String, schedulePeriod: Int, scheduleUnit: ScheduleUnit, creationDate: Date = Date(), isRepeating: Bool = true, scheduledHour: Int = 0) {
         self.name = name
         self.schedulePeriod = schedulePeriod
         self.scheduleUnitRawValue = scheduleUnit.rawValue
@@ -57,18 +58,50 @@ final class VTask {
         self.lastCompletedDate = nil
         self.missedCount = 0
         self.isRepeating = isRepeating
+        self.scheduledHour = scheduledHour
     }
     
     var nextDueDate: Date {
+        let calendar = Calendar.current
+
         if !isRepeating {
             // For non-repeating tasks, they're due on creation date if not completed
-            return lastCompletedDate != nil ? Date.distantFuture : creationDate
+            let baseDate = lastCompletedDate != nil ? Date.distantFuture : creationDate
+            // Set the hour to scheduledHour
+            var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            return calendar.date(from: components) ?? baseDate
         }
-        
+
         let referenceDate = lastCompletedDate ?? creationDate
-        let calendar = Calendar.current
-        
-        return calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: referenceDate) ?? referenceDate
+
+        // Calculate the next due date by adding the schedule period
+        guard let nextDate = calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: referenceDate) else {
+            return referenceDate
+        }
+
+        // Set the hour to scheduledHour
+        var components = calendar.dateComponents([.year, .month, .day], from: nextDate)
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return nextDate
+        }
+
+        // If setting the hour caused the date to be before or equal to the reference date,
+        // advance by another period to ensure we're always moving forward
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: result) else {
+                break
+            }
+            result = advanced
+        }
+
+        return result
     }
     
     var isOverdue: Bool {
@@ -120,8 +153,8 @@ final class VTask {
         // For daily tasks, calculate based on days overdue
         if scheduleUnit == .days {
             if schedulePeriod == 1 {
-                // For single-day tasks, if we're overdue but daysOverdue is 0 (less than 24h), count it as 1
-                missedCount = daysOverdue == 0 ? 1 : daysOverdue
+                // For single-day tasks, count complete days missed
+                missedCount = daysOverdue
             } else {
                 missedCount = daysOverdue / schedulePeriod
             }
@@ -145,13 +178,8 @@ final class VTask {
         }
         
         // For weekly/monthly/yearly or multi-day periods:
-        // If we're 0 units overdue but still overdue, we've missed 1 period
-        // Otherwise, count complete periods plus the current one
-        if unitsOverdue == 0 {
-            missedCount = 1
-        } else {
-            missedCount = (unitsOverdue / schedulePeriod) + 1
-        }
+        // Count only complete periods that have been missed
+        missedCount = unitsOverdue / schedulePeriod
     }
     
     var totalPoints: Int {
