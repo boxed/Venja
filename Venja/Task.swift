@@ -138,48 +138,41 @@ final class VTask {
         missedCount = previousMissedCount
     }
     
-    func updateMissedCount() {
+    func updateMissedCount(currentDate: Date = Date()) {
         // Non-repeating tasks don't have missed counts
         if !isRepeating {
             missedCount = 0
             return
         }
-        
-        guard isOverdue else {
+
+        let dueDate = nextDueDate
+        guard dueDate < currentDate else {
             missedCount = 0
             return
         }
-        
-        // For daily tasks, calculate based on days overdue
-        if scheduleUnit == .days {
-            if schedulePeriod == 1 {
-                // For single-day tasks, count complete days missed
-                missedCount = daysOverdue
-            } else {
-                missedCount = daysOverdue / schedulePeriod
-            }
-            return
-        }
-        
-        // Calculate the time units between nextDueDate and now
+
         let calendar = Calendar.current
-        let components = calendar.dateComponents([scheduleUnit.calendarComponent], from: nextDueDate, to: Date())
-        
-        let unitsOverdue: Int
+
+        // Calculate based on the schedule unit - from due date, not reference date
+        let unitsElapsed: Int
         switch scheduleUnit {
         case .days:
-            unitsOverdue = components.day ?? 0
+            let components = calendar.dateComponents([.day], from: dueDate, to: currentDate)
+            unitsElapsed = components.day ?? 0
         case .weeks:
-            unitsOverdue = components.weekOfYear ?? 0
+            let components = calendar.dateComponents([.day], from: dueDate, to: currentDate)
+            let days = components.day ?? 0
+            unitsElapsed = days / 7
         case .months:
-            unitsOverdue = components.month ?? 0
+            let components = calendar.dateComponents([.month], from: dueDate, to: currentDate)
+            unitsElapsed = components.month ?? 0
         case .years:
-            unitsOverdue = components.year ?? 0
+            let components = calendar.dateComponents([.year], from: dueDate, to: currentDate)
+            unitsElapsed = components.year ?? 0
         }
-        
-        // For weekly/monthly/yearly or multi-day periods:
-        // Count only complete periods that have been missed
-        missedCount = unitsOverdue / schedulePeriod
+
+        // Missed count is how many complete periods have passed since due date
+        missedCount = max(0, unitsElapsed / schedulePeriod)
     }
     
     var totalPoints: Int {

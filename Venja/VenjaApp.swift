@@ -58,12 +58,26 @@ struct VenjaApp: App {
                 // Cancel pending background tasks when app becomes active
                 BGTaskScheduler.shared.cancelAllTaskRequests()
                 #endif
+                // Update missed counts for all tasks when app becomes active
+                updateAllMissedCounts()
             default:
                 break
             }
         }
     }
-    
+
+    private func updateAllMissedCounts() {
+        Task {
+            let context = sharedModelContainer.mainContext
+            let descriptor = FetchDescriptor<VTask>()
+            if let tasks = try? context.fetch(descriptor) {
+                for task in tasks {
+                    task.updateMissedCount()
+                }
+            }
+        }
+    }
+
     #if os(iOS)
     private func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(

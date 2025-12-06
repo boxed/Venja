@@ -287,4 +287,60 @@ struct TaskTests {
         #expect(components.day == 15)
         #expect(components.hour == 15)
     }
+
+    @Test("Weekly task with scheduled hour calculates next due date correctly, even if completion date is close to next time")
+    func testWeeklyTaskWithScheduledHour2() {
+        let calendar = Calendar.current
+
+        // Create weekly task scheduled for 3 PM
+        let task = createTestTask(name: "Weekly Task", schedulePeriod: 1, scheduleUnit: .weeks)
+        task.scheduledHour = 15
+
+        // Last completed June 8, 2025 at 4 PM
+        let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 14))!
+        task.lastCompletedDate = lastCompletion
+
+        // Next due should be June 15, 2025 at 3 PM
+        let nextDue = task.nextDueDate
+        let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDue)
+
+        #expect(components.year == 2025)
+        #expect(components.month == 6)
+        #expect(components.day == 15)
+        #expect(components.hour == 15)
+    }
+
+    @Test("Task scheduled for midnight completed mid-day shows up at midnight with zero missed count")
+    func testMidnightTaskCompletedMidDay() {
+        let calendar = Calendar.current
+
+        // Create daily task scheduled for midnight (default)
+        let task = createTestTask(name: "Midnight Task", schedulePeriod: 1, scheduleUnit: .days)
+        task.scheduledHour = 0  // Midnight
+
+        // Completed yesterday at 12:05 PM
+        let yesterday = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 12, minute: 5))!
+        task.lastCompletedDate = yesterday
+
+        // At midnight today (00:00), task should be due
+        let midnightToday = calendar.date(from: DateComponents(year: 2025, month: 6, day: 16, hour: 0, minute: 0))!
+        let nextDue = task.nextDueDate
+        #expect(nextDue == midnightToday, "Task should be due at midnight today")
+
+        // At 12:06 today, task should still show the same due date and have zero missed count
+        // Since we haven't completed a full period since the task became due
+        let todayAfternoon = calendar.date(from: DateComponents(year: 2025, month: 6, day: 16, hour: 12, minute: 6))!
+
+        // Verify next due date is still midnight today
+        #expect(task.nextDueDate == midnightToday, "Next due date should still be midnight today")
+
+        // Verify task is overdue at 12:06
+        #expect(task.nextDueDate < todayAfternoon, "Task should be overdue at 12:06")
+
+        // Update missed count and verify it's zero
+        // The task became due at midnight, but we're only 12 hours past due
+        // We haven't missed a complete period yet
+        task.updateMissedCount(currentDate: todayAfternoon)
+        #expect(task.missedCount == 0, "Missed count should be zero - haven't completed a full period since due")
+    }
 }

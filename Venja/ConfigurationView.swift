@@ -339,6 +339,37 @@ struct EditTaskView: View {
                 Section("Creation Date") {
                     DatePicker("Created on", selection: $creationDate, displayedComponents: .date)
                 }
+
+                Section("Completion History") {
+                    if let history = task.completionHistory, !history.isEmpty {
+                        ForEach(history.sorted(by: { $0.completionDate > $1.completionDate })) { entry in
+                            HStack {
+                                Text(entry.completionDate, style: .date)
+                                Text(entry.completionDate, style: .time)
+                                Spacer()
+                                if entry.missedCountAtCompletion > 0 {
+                                    Text("(missed: \(entry.missedCountAtCompletion))")
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No completions yet")
+                            .foregroundColor(.secondary)
+                    }
+
+                    if let lastCompleted = task.lastCompletedDate {
+                        HStack {
+                            Text("Last completed:")
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(lastCompleted, style: .date)
+                            Text(lastCompleted, style: .time)
+                        }
+                        .font(.caption)
+                    }
+                }
             }
             .navigationTitle("Edit Task")
             #if os(iOS)
