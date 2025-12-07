@@ -152,15 +152,43 @@ struct ConfigurationView: View {
 struct AddTaskView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var taskName = ""
     @State private var schedulePeriod = 1
     @State private var scheduleUnit = ScheduleUnit.days
     @State private var creationDate = Date()
     @State private var isRepeating = true
     @State private var scheduledHour = 0
+    @State private var targetWeekday = Calendar.current.component(.weekday, from: Date())
+    @State private var targetDayOfMonth = Calendar.current.component(.day, from: Date())
+    @State private var targetMonth = Calendar.current.component(.month, from: Date())
+    @State private var targetDayOfYear = Calendar.current.component(.day, from: Date())
     @FocusState private var isTaskNameFocused: Bool
-    
+
+    private static let weekdaySymbols: [String] = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.weekdaySymbols
+    }()
+
+    private static let monthSymbols: [String] = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.monthSymbols
+    }()
+
+    private func daysInMonth(_ month: Int) -> Int {
+        let calendar = Calendar.current
+        var components = DateComponents()
+        components.year = calendar.component(.year, from: Date())
+        components.month = month
+        if let date = calendar.date(from: components),
+           let range = calendar.range(of: .day, in: .month, for: date) {
+            return range.count
+        }
+        return 31
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -186,6 +214,43 @@ struct AddTaskView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+
+                        // Target pickers based on schedule unit
+                        if scheduleUnit == .weeks {
+                            Picker("Target day", selection: $targetWeekday) {
+                                ForEach(1...7, id: \.self) { weekday in
+                                    Text(Self.weekdaySymbols[weekday - 1])
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        } else if scheduleUnit == .months {
+                            Picker("Target day of month", selection: $targetDayOfMonth) {
+                                ForEach(1...31, id: \.self) { day in
+                                    Text("\(day)")
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        } else if scheduleUnit == .years {
+                            Picker("Target month", selection: $targetMonth) {
+                                ForEach(1...12, id: \.self) { month in
+                                    Text(Self.monthSymbols[month - 1])
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            Picker("Target day", selection: $targetDayOfYear) {
+                                ForEach(1...daysInMonth(targetMonth), id: \.self) { day in
+                                    Text("\(day)")
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .onChange(of: targetMonth) { _, newMonth in
+                                let maxDays = daysInMonth(newMonth)
+                                if targetDayOfYear > maxDays {
+                                    targetDayOfYear = maxDays
+                                }
+                            }
+                        }
                     }
 
                     Picker("Time of day", selection: $scheduledHour) {
@@ -194,10 +259,6 @@ struct AddTaskView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                }
-
-                Section("Creation Date") {
-                    DatePicker("Created on", selection: $creationDate, displayedComponents: .date)
                 }
             }
             .navigationTitle("New Task")
@@ -240,8 +301,53 @@ struct AddTaskView: View {
         #endif
     }
     
+    private func computeCreationDate() -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard isRepeating else {
+            return now
+        }
+
+        switch scheduleUnit {
+        case .days:
+            // For days, creation date is now
+            return now
+        case .weeks:
+            // Compute a creation date that, when schedulePeriod weeks are added, lands on targetWeekday
+            // Find the most recent occurrence of targetWeekday
+            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear, .weekday], from: now)
+            components.weekday = targetWeekday
+            if let targetDate = calendar.date(from: components) {
+                // Go back schedulePeriod weeks from that target
+                return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: targetDate) ?? now
+            }
+            return now
+        case .months:
+            // Compute a creation date that, when schedulePeriod months are added, lands on targetDayOfMonth
+            var components = calendar.dateComponents([.year, .month], from: now)
+            components.day = targetDayOfMonth
+            if let targetDate = calendar.date(from: components) {
+                // Go back schedulePeriod months from that target
+                return calendar.date(byAdding: .month, value: -schedulePeriod, to: targetDate) ?? now
+            }
+            return now
+        case .years:
+            // Compute a creation date that, when schedulePeriod years are added, lands on targetMonth/targetDayOfYear
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = targetMonth
+            components.day = targetDayOfYear
+            if let targetDate = calendar.date(from: components) {
+                // Go back schedulePeriod years from that target
+                return calendar.date(byAdding: .year, value: -schedulePeriod, to: targetDate) ?? now
+            }
+            return now
+        }
+    }
+
     private func addTask() {
-        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: creationDate, isRepeating: isRepeating, scheduledHour: scheduledHour)
+        let computedCreationDate = computeCreationDate()
+        let newTask = VTask(name: taskName, schedulePeriod: schedulePeriod, scheduleUnit: scheduleUnit, creationDate: computedCreationDate, isRepeating: isRepeating, scheduledHour: scheduledHour)
         modelContext.insert(newTask)
         saveTasksForWidget()
         dismiss()
@@ -282,25 +388,59 @@ struct EditTaskView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Bindable var task: VTask
-    
+
     @State private var taskName: String
     @State private var schedulePeriod: Int
     @State private var scheduleUnit: ScheduleUnit
-    @State private var creationDate: Date
     @State private var isRepeating: Bool
     @State private var scheduledHour: Int
+    @State private var targetWeekday: Int
+    @State private var targetDayOfMonth: Int
+    @State private var targetMonth: Int
+    @State private var targetDayOfYear: Int
     @FocusState private var isTaskNameFocused: Bool
+
+    private static let weekdaySymbols: [String] = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.weekdaySymbols
+    }()
+
+    private static let monthSymbols: [String] = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.monthSymbols
+    }()
+
+    private func daysInMonth(_ month: Int) -> Int {
+        let calendar = Calendar.current
+        var components = DateComponents()
+        components.year = calendar.component(.year, from: Date())
+        components.month = month
+        if let date = calendar.date(from: components),
+           let range = calendar.range(of: .day, in: .month, for: date) {
+            return range.count
+        }
+        return 31
+    }
 
     init(task: VTask) {
         self.task = task
         _taskName = State(initialValue: task.name)
         _schedulePeriod = State(initialValue: task.schedulePeriod)
         _scheduleUnit = State(initialValue: task.scheduleUnit)
-        _creationDate = State(initialValue: task.creationDate)
         _isRepeating = State(initialValue: task.isRepeating)
         _scheduledHour = State(initialValue: task.scheduledHour)
+
+        // Derive target values from the task's next due date
+        let calendar = Calendar.current
+        let dueDate = task.nextDueDate
+        _targetWeekday = State(initialValue: calendar.component(.weekday, from: dueDate))
+        _targetDayOfMonth = State(initialValue: calendar.component(.day, from: dueDate))
+        _targetMonth = State(initialValue: calendar.component(.month, from: dueDate))
+        _targetDayOfYear = State(initialValue: calendar.component(.day, from: dueDate))
     }
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -326,6 +466,43 @@ struct EditTaskView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+
+                        // Target pickers based on schedule unit
+                        if scheduleUnit == .weeks {
+                            Picker("Target day", selection: $targetWeekday) {
+                                ForEach(1...7, id: \.self) { weekday in
+                                    Text(Self.weekdaySymbols[weekday - 1])
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        } else if scheduleUnit == .months {
+                            Picker("Target day of month", selection: $targetDayOfMonth) {
+                                ForEach(1...31, id: \.self) { day in
+                                    Text("\(day)")
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        } else if scheduleUnit == .years {
+                            Picker("Target month", selection: $targetMonth) {
+                                ForEach(1...12, id: \.self) { month in
+                                    Text(Self.monthSymbols[month - 1])
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            Picker("Target day", selection: $targetDayOfYear) {
+                                ForEach(1...daysInMonth(targetMonth), id: \.self) { day in
+                                    Text("\(day)")
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .onChange(of: targetMonth) { _, newMonth in
+                                let maxDays = daysInMonth(newMonth)
+                                if targetDayOfYear > maxDays {
+                                    targetDayOfYear = maxDays
+                                }
+                            }
+                        }
                     }
 
                     Picker("Time of day", selection: $scheduledHour) {
@@ -334,10 +511,6 @@ struct EditTaskView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                }
-
-                Section("Creation Date") {
-                    DatePicker("Created on", selection: $creationDate, displayedComponents: .date)
                 }
 
                 Section("Completion History") {
@@ -411,11 +584,51 @@ struct EditTaskView: View {
         #endif
     }
     
+    private func computeCreationDate() -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard isRepeating else {
+            return task.creationDate  // Keep original for non-repeating
+        }
+
+        switch scheduleUnit {
+        case .days:
+            // For days, keep the original creation date
+            return task.creationDate
+        case .weeks:
+            // Compute a creation date that, when schedulePeriod weeks are added, lands on targetWeekday
+            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear, .weekday], from: now)
+            components.weekday = targetWeekday
+            if let targetDate = calendar.date(from: components) {
+                return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: targetDate) ?? task.creationDate
+            }
+            return task.creationDate
+        case .months:
+            // Compute a creation date that, when schedulePeriod months are added, lands on targetDayOfMonth
+            var components = calendar.dateComponents([.year, .month], from: now)
+            components.day = targetDayOfMonth
+            if let targetDate = calendar.date(from: components) {
+                return calendar.date(byAdding: .month, value: -schedulePeriod, to: targetDate) ?? task.creationDate
+            }
+            return task.creationDate
+        case .years:
+            // Compute a creation date that, when schedulePeriod years are added, lands on targetMonth/targetDayOfYear
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = targetMonth
+            components.day = targetDayOfYear
+            if let targetDate = calendar.date(from: components) {
+                return calendar.date(byAdding: .year, value: -schedulePeriod, to: targetDate) ?? task.creationDate
+            }
+            return task.creationDate
+        }
+    }
+
     private func saveTask() {
         task.name = taskName
         task.schedulePeriod = schedulePeriod
         task.scheduleUnit = scheduleUnit
-        task.creationDate = creationDate
+        task.creationDate = computeCreationDate()
         task.isRepeating = isRepeating
         task.scheduledHour = scheduledHour
         saveTasksForWidget()

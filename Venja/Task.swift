@@ -77,23 +77,18 @@ final class VTask {
 
         let referenceDate = lastCompletedDate ?? creationDate
 
-        // Calculate the next due date by adding the schedule period
-        guard let nextDate = calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: referenceDate) else {
-            return referenceDate
-        }
-
-        // Set the hour to scheduledHour
-        var components = calendar.dateComponents([.year, .month, .day], from: nextDate)
+        // Find the next scheduled occurrence after the reference date
+        // Start by getting the scheduled time on the same day as the reference date
+        var components = calendar.dateComponents([.year, .month, .day], from: referenceDate)
         components.hour = scheduledHour
         components.minute = 0
         components.second = 0
 
         guard var result = calendar.date(from: components) else {
-            return nextDate
+            return referenceDate
         }
 
-        // If setting the hour caused the date to be before or equal to the reference date,
-        // advance by another period to ensure we're always moving forward
+        // Advance by periods until we find a time after the reference date
         while result <= referenceDate {
             guard let advanced = calendar.date(byAdding: scheduleUnit.calendarComponent, value: schedulePeriod, to: result) else {
                 break

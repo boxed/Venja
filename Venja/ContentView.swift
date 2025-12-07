@@ -26,8 +26,7 @@ struct ContentView: View {
             if !task.isRepeating && task.lastCompletedDate != nil {
                 return false
             }
-            let calendar = Calendar.current
-            return calendar.isDateInToday(task.nextDueDate) || task.isOverdue
+            return task.nextDueDate <= Date()
         }.sorted { 
             // Sort by missed count (descending), then by next due date (ascending)
             if $0.missedCount != $1.missedCount {

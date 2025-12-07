@@ -185,11 +185,11 @@ struct TaskTests {
         let task = createTestTask(name: "Evening Task", schedulePeriod: 1, scheduleUnit: .days)
         task.scheduledHour = 17  // 5 PM
 
-        // Set last completion to a specific date
-        let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 10))!
+        // Set last completion to a specific date (after the scheduled hour)
+        let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 18))!
         task.lastCompletedDate = lastCompletion
 
-        // Next due date should be June 16, 2025 at 17:00
+        // Next due date should be June 16, 2025 at 17:00 (next day since we completed after 5 PM)
         let nextDue = task.nextDueDate
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextDue)
 
@@ -252,17 +252,18 @@ struct TaskTests {
         let task = createTestTask(name: "Evening Task", schedulePeriod: 1, scheduleUnit: .days)
         task.scheduledHour = 20
 
-        // Last completed June 15 at 9 AM
+        // Last completed June 15 at 9 AM (before scheduled hour)
         let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 9))!
         task.lastCompletedDate = lastCompletion
 
-        // Next due should be June 16 at 8 PM
+        // Next due should be June 15 at 8 PM (same day, since we completed before the scheduled hour)
+        // The scheduler anchors to the scheduled time, not to the completion time
         let nextDue = task.nextDueDate
         let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDue)
 
         #expect(components.year == 2025)
         #expect(components.month == 6)
-        #expect(components.day == 16)
+        #expect(components.day == 15)
         #expect(components.hour == 20)
     }
 
