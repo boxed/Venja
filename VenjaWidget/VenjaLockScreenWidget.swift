@@ -39,20 +39,29 @@ struct LockScreenProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         let currentDate = Date()
         let calendar = Calendar.current
-        
+
         // Fetch current tasks directly from SwiftData
         let activeTasks = fetchTasksSync()
-        
+        let allTasks = fetchAllTasksSync()
+
         // Create single entry for current state
         let entry = SimpleEntry(date: currentDate, configuration: configuration, tasks: activeTasks)
-        
+
         // Calculate when to reload the timeline
         let startOfTomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: currentDate)!)
-        
-        // Reload timeline at midnight or in 4 hours, whichever comes first
-        // This ensures we refresh at day boundaries and periodically throughout the day
-        let nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
-        
+
+        // Find the next task that will become due (for intra-day scheduling)
+        let nextTaskDueDate = allTasks
+            .filter { $0.nextDueDate > currentDate }
+            .map { $0.nextDueDate }
+            .min()
+
+        // Reload timeline at: next task due time, midnight, or in 4 hours - whichever comes first
+        var nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
+        if let nextDue = nextTaskDueDate {
+            nextUpdate = min(nextUpdate, nextDue)
+        }
+
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 }
@@ -241,6 +250,18 @@ struct VenjaLockScreenWidget: Widget {
 }
 
 extension LockScreenProvider {
+    func fetchAllTasksSync() -> [VTask] {
+        let context = ModelContext(modelContainer)
+
+        do {
+            let descriptor = FetchDescriptor<VTask>()
+            return try context.fetch(descriptor)
+        } catch {
+            print("Failed to fetch tasks: \(error)")
+            return []
+        }
+    }
+
     func fetchTasksSync() -> [WidgetTaskData] {
         let context = ModelContext(modelContainer)
         
@@ -254,12 +275,12 @@ extension LockScreenProvider {
             }
             
             let activeTasks = tasks.filter { task in
-                // Check if task is active (due today or overdue)
+                // Check if task is active (due date has passed, respecting scheduledHour)
                 if task.isRepeating {
-                    return task.isOverdue || Calendar.current.isDateInToday(task.nextDueDate)
+                    return task.nextDueDate <= Date()
                 } else {
                     // Non-repeating tasks are active if not completed and due
-                    return task.lastCompletedDate == nil && (task.isOverdue || Calendar.current.isDateInToday(task.nextDueDate))
+                    return task.lastCompletedDate == nil && task.nextDueDate <= Date()
                 }
             }.sorted { task1, task2 in
                 if task1.missedCount != task2.missedCount {

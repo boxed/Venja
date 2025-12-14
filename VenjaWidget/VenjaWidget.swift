@@ -22,7 +22,7 @@ struct Provider: AppIntentTimelineProvider {
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         let currentDate = Date()
         let calendar = Calendar.current
-        
+
         // Fetch current tasks
         let allTasks = await fetchAllTasks()
         let activeTasks = allTasks.filter { task in
@@ -34,17 +34,26 @@ struct Provider: AppIntentTimelineProvider {
             }
             return task1.nextDueDate < task2.nextDueDate
         }
-        
+
         // Create single entry for current state
         let entry = SimpleEntry(date: currentDate, configuration: configuration, tasks: activeTasks)
-        
+
         // Calculate when to reload the timeline
         let startOfTomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: currentDate)!)
-        
-        // Reload timeline at midnight or in 4 hours, whichever comes first
-        // This ensures we refresh at day boundaries and periodically throughout the day
-        let nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
-        
+
+        // Find the next task that will become due (for intra-day scheduling)
+        let nextTaskDueDate = allTasks
+            .filter { !$0.isActiveForDate(currentDate) }
+            .map { $0.nextDueDate }
+            .filter { $0 > currentDate }
+            .min()
+
+        // Reload timeline at: next task due time, midnight, or in 4 hours - whichever comes first
+        var nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
+        if let nextDue = nextTaskDueDate {
+            nextUpdate = min(nextUpdate, nextDue)
+        }
+
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 
@@ -134,8 +143,8 @@ struct WidgetTaskData: Codable {
         if !isRepeating && lastCompletedDate != nil {
             return false
         }
-        let calendar = Calendar.current
-        return calendar.isDate(nextDueDate, inSameDayAs: date) || (nextDueDate < date)
+        // Task is active if its due date has passed (respects scheduledHour for intra-day scheduling)
+        return nextDueDate <= date
     }
 }
 
