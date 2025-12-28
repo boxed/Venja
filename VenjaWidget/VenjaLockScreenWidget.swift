@@ -28,7 +28,7 @@ struct LockScreenProvider: AppIntentTimelineProvider {
         }
     }()
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: fetchTasksSync())
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: [], isPlaceholder: true)
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
@@ -108,57 +108,63 @@ struct VenjaLockScreenWidgetCircularView: View {
     }
     
     var body: some View {
-        let calculatedPoints = calculateTotalPoints()
-        
-        if entry.tasks.isEmpty {
-            if calculatedPoints > 0 {
-                Text("\(calculatedPoints)")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .widgetAccentable()
-            } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title)
-                    .widgetAccentable()
-            }
+        if entry.isPlaceholder {
+            Color.clear
         } else {
-            GeometryReader { geometry in
-                let size = min(geometry.size.width, geometry.size.height)
-                let center = CGPoint(x: size / 2, y: size / 2)
-                let radius = size * 0.35
-                let circleSize = size * 0.15
-                let maxTasks = 12
-                let tasksToShow = Array(entry.tasks.prefix(maxTasks))
-                
-                ZStack {
-                    ForEach(0..<tasksToShow.count, id: \.self) { index in
-                        let task = tasksToShow[index]
-                        let position = circlePosition(for: index, total: tasksToShow.count, radius: radius)
-                        
-                        Circle()
-                            .fill(task.missedCount > 0 ? Color.primary : Color.clear)
-                            .stroke(Color.primary, lineWidth: 1.5)
-                            .frame(width: circleSize, height: circleSize)
-                            .position(x: center.x + position.x, y: center.y + position.y)
-                    }
-                    
-                    // Display total points in the center
+            let calculatedPoints = calculateTotalPoints()
+
+            if entry.tasks.isEmpty {
+                if calculatedPoints > 0 {
                     Text("\(calculatedPoints)")
-                        .font(.subheadline)
+                        .font(.title2)
                         .fontWeight(.bold)
-                        .position(x: center.x, y: center.y)
+                        .widgetAccentable()
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title)
+                        .widgetAccentable()
                 }
+            } else {
+                GeometryReader { geometry in
+                    let size = min(geometry.size.width, geometry.size.height)
+                    let center = CGPoint(x: size / 2, y: size / 2)
+                    let radius = size * 0.35
+                    let circleSize = size * 0.15
+                    let maxTasks = 12
+                    let tasksToShow = Array(entry.tasks.prefix(maxTasks))
+
+                    ZStack {
+                        ForEach(0..<tasksToShow.count, id: \.self) { index in
+                            let task = tasksToShow[index]
+                            let position = circlePosition(for: index, total: tasksToShow.count, radius: radius)
+
+                            Circle()
+                                .fill(task.missedCount > 0 ? Color.primary : Color.clear)
+                                .stroke(Color.primary, lineWidth: 1.5)
+                                .frame(width: circleSize, height: circleSize)
+                                .position(x: center.x + position.x, y: center.y + position.y)
+                        }
+
+                        // Display total points in the center
+                        Text("\(calculatedPoints)")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .position(x: center.x, y: center.y)
+                    }
+                }
+                .widgetAccentable()
             }
-            .widgetAccentable()
         }
     }
 }
 
 struct VenjaLockScreenWidgetRectangularView: View {
     var entry: SimpleEntry
-    
+
     var body: some View {
-        if entry.tasks.isEmpty {
+        if entry.isPlaceholder {
+            Color.clear
+        } else if entry.tasks.isEmpty {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title3)
@@ -199,9 +205,11 @@ struct VenjaLockScreenWidgetRectangularView: View {
 
 struct VenjaLockScreenWidgetInlineView: View {
     var entry: SimpleEntry
-    
+
     var body: some View {
-        if entry.tasks.isEmpty {
+        if entry.isPlaceholder {
+            Color.clear
+        } else if entry.tasks.isEmpty {
             Label("All done!", systemImage: "checkmark.circle.fill")
         } else {
             let hasMissed = entry.tasks.contains(where: { $0.missedCount > 0 })

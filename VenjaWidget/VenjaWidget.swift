@@ -11,7 +11,7 @@ import SwiftData
 
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: [])
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: [], isPlaceholder: true)
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
@@ -66,6 +66,7 @@ struct SimpleEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
     let tasks: [WidgetTaskData]
+    var isPlaceholder: Bool = false
 }
 
 struct WidgetTaskData: Codable {
@@ -175,7 +176,9 @@ struct VenjaWidgetEntryView : View {
     }
 
     var body: some View {
-        if !entry.tasks.isEmpty {
+        if entry.isPlaceholder {
+            Color.clear
+        } else if !entry.tasks.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(entry.tasks.prefix(maxTasksToShow).enumerated()), id: \.offset) { index, task in
                     HStack(spacing: 4) {
