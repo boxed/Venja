@@ -45,10 +45,10 @@ struct ConfigurationView: View {
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                 }
-                                if task.totalPoints > 0 {
-                                    Text("\(task.totalPoints) total points")
+                                if task.isRepeating || task.lastCompletedDate == nil {
+                                    Text("Next due: \(task.nextDueDate.formatted(date: .abbreviated, time: .shortened))")
                                         .font(.caption2)
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(task.missedCount > 0 ? .red : (task.isOverdue ? .orange : .blue))
                                 }
                             }
                             Spacer()
