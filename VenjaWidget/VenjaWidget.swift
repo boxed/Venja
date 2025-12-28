@@ -158,10 +158,8 @@ struct VenjaWidgetEntryView : View {
         switch widgetFamily {
         case .systemSmall:
             return 4
-        case .systemMedium:
+        case .systemMedium, .systemLarge:
             return 5
-        case .systemLarge:
-            return 12
         default:
             return 3
         }
