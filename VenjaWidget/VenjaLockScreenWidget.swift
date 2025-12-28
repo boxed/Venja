@@ -68,92 +68,44 @@ struct LockScreenProvider: AppIntentTimelineProvider {
 
 struct VenjaLockScreenWidgetCircularView: View {
     var entry: SimpleEntry
-    @State private var totalPoints: Int = 0
-    
-    var modelContainer: ModelContainer = {
-        let schema = Schema([
-            VTask.self,
-            CompletionHistory.self,
-        ])
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-        
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-    
+
     private func circlePosition(for index: Int, total: Int, radius: CGFloat) -> CGPoint {
         let angle = (2 * .pi / CGFloat(total)) * CGFloat(index) - .pi / 2
         let x = radius * cos(angle)
         let y = radius * sin(angle)
         return CGPoint(x: x, y: y)
     }
-    
-    private func calculateTotalPoints() -> Int {
-        let context = ModelContext(modelContainer)
-        do {
-            let descriptor = FetchDescriptor<CompletionHistory>()
-            let completions = try context.fetch(descriptor)
-            return completions.reduce(0) { $0 + $1.points }
-        } catch {
-            print("Failed to fetch completion history: \(error)")
-            return 0
-        }
-    }
-    
+
     var body: some View {
         if entry.isPlaceholder {
             Color.clear
+        } else if entry.tasks.isEmpty {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title)
+                .widgetAccentable()
         } else {
-            let calculatedPoints = calculateTotalPoints()
+            GeometryReader { geometry in
+                let size = min(geometry.size.width, geometry.size.height)
+                let center = CGPoint(x: size / 2, y: size / 2)
+                let radius = size * 0.35
+                let circleSize = size * 0.15
+                let maxTasks = 12
+                let tasksToShow = Array(entry.tasks.prefix(maxTasks))
 
-            if entry.tasks.isEmpty {
-                if calculatedPoints > 0 {
-                    Text("\(calculatedPoints)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .widgetAccentable()
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
-                        .widgetAccentable()
-                }
-            } else {
-                GeometryReader { geometry in
-                    let size = min(geometry.size.width, geometry.size.height)
-                    let center = CGPoint(x: size / 2, y: size / 2)
-                    let radius = size * 0.35
-                    let circleSize = size * 0.15
-                    let maxTasks = 12
-                    let tasksToShow = Array(entry.tasks.prefix(maxTasks))
+                ZStack {
+                    ForEach(0..<tasksToShow.count, id: \.self) { index in
+                        let task = tasksToShow[index]
+                        let position = circlePosition(for: index, total: tasksToShow.count, radius: radius)
 
-                    ZStack {
-                        ForEach(0..<tasksToShow.count, id: \.self) { index in
-                            let task = tasksToShow[index]
-                            let position = circlePosition(for: index, total: tasksToShow.count, radius: radius)
-
-                            Circle()
-                                .fill(task.missedCount > 0 ? Color.primary : Color.clear)
-                                .stroke(Color.primary, lineWidth: 1.5)
-                                .frame(width: circleSize, height: circleSize)
-                                .position(x: center.x + position.x, y: center.y + position.y)
-                        }
-
-                        // Display total points in the center
-                        Text("\(calculatedPoints)")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .position(x: center.x, y: center.y)
+                        Circle()
+                            .fill(task.missedCount > 0 ? Color.primary : Color.clear)
+                            .stroke(Color.primary, lineWidth: 1.5)
+                            .frame(width: circleSize, height: circleSize)
+                            .position(x: center.x + position.x, y: center.y + position.y)
                     }
                 }
-                .widgetAccentable()
             }
+            .widgetAccentable()
         }
     }
 }
