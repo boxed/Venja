@@ -15,9 +15,7 @@ struct ConfigurationView: View {
     @Query(sort: \VTask.name) private var tasks: [VTask]
     @State private var showingAddTask = false
     @State private var taskToEdit: VTask?
-    @State private var showingEditTask = false
     @State private var taskToShowHistory: VTask?
-    @State private var showingHistory = false
     
     var body: some View {
         NavigationStack {
@@ -25,7 +23,6 @@ struct ConfigurationView: View {
                 ForEach(tasks) { task in
                     Button(action: {
                         taskToEdit = task
-                        showingEditTask = true
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -55,7 +52,6 @@ struct ConfigurationView: View {
                             
                             Button(action: {
                                 taskToShowHistory = task
-                                showingHistory = true
                             }) {
                                 Image(systemName: "clock.arrow.circlepath")
                                     .foregroundColor(.blue)
@@ -96,15 +92,11 @@ struct ConfigurationView: View {
             .sheet(isPresented: $showingAddTask) {
                 AddTaskView()
             }
-            .sheet(isPresented: $showingEditTask) {
-                if let task = taskToEdit {
-                    EditTaskView(task: task)
-                }
+            .sheet(item: $taskToEdit) { task in
+                EditTaskView(task: task)
             }
-            .sheet(isPresented: $showingHistory) {
-                if let task = taskToShowHistory {
-                    TaskHistoryView(task: task)
-                }
+            .sheet(item: $taskToShowHistory) { task in
+                TaskHistoryView(task: task)
             }
         }
         #if os(macOS)
