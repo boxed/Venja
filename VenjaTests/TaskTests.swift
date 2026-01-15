@@ -274,12 +274,14 @@ struct TaskTests {
         // Create weekly task scheduled for 3 PM
         let task = createTestTask(name: "Weekly Task", schedulePeriod: 1, scheduleUnit: .weeks)
         task.scheduledHour = 15
+        // Set creationDate to a Sunday (June 8, 2025) to establish Sunday as the target weekday
+        task.creationDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 8, hour: 10))!
 
-        // Last completed June 8, 2025 at 4 PM
+        // Last completed June 8, 2025 at 4 PM (Sunday)
         let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 8, hour: 16))!
         task.lastCompletedDate = lastCompletion
 
-        // Next due should be June 15, 2025 at 3 PM
+        // Next due should be June 15, 2025 at 3 PM (next Sunday)
         let nextDue = task.nextDueDate
         let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDue)
 
@@ -296,12 +298,14 @@ struct TaskTests {
         // Create weekly task scheduled for 3 PM
         let task = createTestTask(name: "Weekly Task", schedulePeriod: 1, scheduleUnit: .weeks)
         task.scheduledHour = 15
+        // Set creationDate to a Sunday (June 8, 2025) to establish Sunday as the target weekday
+        task.creationDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 8, hour: 10))!
 
-        // Last completed June 8, 2025 at 4 PM
+        // Last completed June 15, 2025 at 2 PM (Sunday, just before scheduled time)
         let lastCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 14))!
         task.lastCompletedDate = lastCompletion
 
-        // Next due should be June 15, 2025 at 3 PM
+        // Next due should be June 15, 2025 at 3 PM (same day since completion was before scheduled hour)
         let nextDue = task.nextDueDate
         let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDue)
 
@@ -309,6 +313,74 @@ struct TaskTests {
         #expect(components.month == 6)
         #expect(components.day == 15)
         #expect(components.hour == 15)
+    }
+
+    @Test("Weekly task preserves target weekday after completion on different day")
+    func testWeeklyTaskPreservesTargetWeekdayAfterCompletion() {
+        let calendar = Calendar.current
+
+        // Create a weekly task that should be due on Saturdays (weekday 7)
+        // We'll set creationDate to a Saturday so the target weekday is Saturday
+        let saturdayCreationDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 7, hour: 10))! // Saturday June 7
+        let task = createTestTask(name: "Saturday Task", schedulePeriod: 1, scheduleUnit: .weeks)
+        task.creationDate = saturdayCreationDate
+        task.scheduledHour = 10
+
+        // Verify initial nextDueDate is on a Saturday
+        let initialNextDue = task.nextDueDate
+        let initialWeekday = calendar.component(.weekday, from: initialNextDue)
+        #expect(initialWeekday == 7, "Initial next due should be Saturday (weekday 7), got \(initialWeekday)")
+
+        // Now complete the task on a Wednesday (weekday 4)
+        let wednesdayCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 11, hour: 15))! // Wednesday June 11
+        task.lastCompletedDate = wednesdayCompletion
+
+        // The next due date should STILL be on a Saturday, not on Wednesday!
+        // This is the bug: currently it lands on Wednesday because nextDueDate
+        // just advances from lastCompletedDate without respecting the target weekday
+        let nextDueAfterCompletion = task.nextDueDate
+        let weekdayAfterCompletion = calendar.component(.weekday, from: nextDueAfterCompletion)
+
+        #expect(weekdayAfterCompletion == 7, "Next due after completion should be Saturday (weekday 7), but got \(weekdayAfterCompletion)")
+
+        // Verify the date is the next Saturday after the Wednesday completion
+        // Wednesday June 11 -> next Saturday should be June 14
+        let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDueAfterCompletion)
+        #expect(components.year == 2025)
+        #expect(components.month == 6)
+        #expect(components.day == 14, "Should be June 14 (Saturday), got \(components.day ?? 0)")
+        #expect(components.hour == 10)
+    }
+
+    @Test("Weekly task preserves target weekday when editing to different day")
+    func testWeeklyTaskPreservesTargetWeekdayWhenEditing() {
+        let calendar = Calendar.current
+
+        // Create a weekly task originally scheduled for Saturday
+        let saturdayCreationDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 7, hour: 10))! // Saturday June 7
+        let task = createTestTask(name: "Weekend Task", schedulePeriod: 1, scheduleUnit: .weeks)
+        task.creationDate = saturdayCreationDate
+        task.scheduledHour = 10
+
+        // Complete the task on Saturday June 14
+        let saturdayCompletion = calendar.date(from: DateComponents(year: 2025, month: 6, day: 14, hour: 11))!
+        task.lastCompletedDate = saturdayCompletion
+
+        // Now simulate editing the task to change target day to Sunday (weekday 1)
+        // This is what computeCreationDate() in EditTaskView does: create a new creationDate
+        // that lands on the target weekday when advanced by schedulePeriod
+        let sundayCreationDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 8, hour: 10))! // Sunday June 8
+        task.creationDate = sundayCreationDate
+
+        // After changing creationDate, nextDueDate should land on Sunday, not Saturday
+        let nextDue = task.nextDueDate
+        let weekday = calendar.component(.weekday, from: nextDue)
+
+        #expect(weekday == 1, "Next due should be Sunday (weekday 1) after editing, but got \(weekday)")
+
+        // The next Sunday after Saturday June 14 is June 15
+        let components = calendar.dateComponents([.year, .month, .day], from: nextDue)
+        #expect(components.day == 15, "Should be June 15 (Sunday), got \(components.day ?? 0)")
     }
 
     @Test("Task scheduled for midnight completed mid-day shows up at midnight with zero missed count")
