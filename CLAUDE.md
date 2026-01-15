@@ -56,3 +56,10 @@ Key patterns:
 - CloudKit and push notifications are configured in entitlements
 - Requires Apple Developer account for full functionality
 - Minimum iOS 17 / macOS 14 (SwiftData requirement)
+
+
+**After completing a change**, build and run the app on Anders iPhone:
+
+```bash
+xcodebuild -workspace calvetica.xcworkspace -scheme calvetica -destination "name=Anders Hovmöller's iPhone" build
+```
