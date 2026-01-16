@@ -25,7 +25,18 @@
       "Bash(xcrun simctl install:*)",
       "Bash(xcrun simctl launch:*)",
       "Bash(osascript:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(/Users/boxed/Projects/Venja/debug_test.swift)",
+      "Bash(for:*)",
+      "Bash(done)",
+      "Bash(do sips -s format png \"$size.png\" --out \"$size.png\")",
+      "Bash(do sips -s format png \"$size.png\" -o \"$size.png\")",
+      "Bash(defaults read:*)",
+      "Bash(security find-identity:*)",
+      "Bash(codesign:*)",
+      "Bash(xmllint:*)",
+      "Bash(pkill:*)",
+      "Bash(xcrun xcresulttool get:*)"
     ],
     "deny": []
   }
