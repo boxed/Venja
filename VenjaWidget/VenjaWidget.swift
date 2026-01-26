@@ -235,7 +235,7 @@ struct VenjaWidget: Widget {
                         Color.red
                     }
                     else if entry.tasks.isEmpty {
-                        RoundedRectangle(cornerRadius: 21)
+                        ContainerRelativeShape()
                             .stroke(.green, lineWidth: 4)
                     }
                     else {
