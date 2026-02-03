@@ -72,7 +72,8 @@ struct ContentView: View {
                                             withAnimation {
                                                 let previousDate = task.lastCompletedDate
                                                 let previousMissedCount = task.missedCount
-                                                let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+                                                let startOfToday = Calendar.current.startOfDay(for: Date())
+                                                let yesterday = Calendar.current.date(byAdding: .second, value: -1, to: startOfToday)!
                                                 task.markCompleted(at: yesterday)
                                                 undoManager.recordCompletion(
                                                     task: task,
