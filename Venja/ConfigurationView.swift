@@ -155,6 +155,7 @@ struct AddTaskView: View {
     @State private var targetDayOfMonth = Calendar.current.component(.day, from: Date())
     @State private var targetMonth = Calendar.current.component(.month, from: Date())
     @State private var targetDayOfYear = Calendar.current.component(.day, from: Date())
+    @State private var firstDueDate = Date()
     @FocusState private var isTaskNameFocused: Bool
 
     private static let weekdaySymbols: [String] = {
@@ -179,6 +180,63 @@ struct AddTaskView: View {
             return range.count
         }
         return 31
+    }
+
+    private func computeDefaultFirstDueDate() -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard isRepeating else { return firstDueDate }
+
+        switch scheduleUnit {
+        case .days:
+            var components = calendar.dateComponents([.year, .month, .day], from: now)
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            let result = calendar.date(from: components) ?? now
+            if result <= now {
+                return calendar.date(byAdding: .day, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .weeks:
+            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
+            components.weekday = targetWeekday
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .weekOfYear, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .months:
+            var components = calendar.dateComponents([.year, .month], from: now)
+            components.day = targetDayOfMonth
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .month, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .years:
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = targetMonth
+            components.day = targetDayOfYear
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .year, value: 1, to: result) ?? now
+            }
+            return result
+        }
     }
 
     var body: some View {
@@ -245,6 +303,12 @@ struct AddTaskView: View {
                         }
                     }
 
+                    DatePicker(
+                        isRepeating ? "First due date" : "Due date",
+                        selection: $firstDueDate,
+                        displayedComponents: .date
+                    )
+
                     Picker("Time of day", selection: $scheduledHour) {
                         ForEach(0..<24, id: \.self) { hour in
                             Text(String(format: "%02d:00", hour))
@@ -252,6 +316,42 @@ struct AddTaskView: View {
                     }
                     .pickerStyle(.menu)
                 }
+            }
+            .onChange(of: firstDueDate) { _, newDate in
+                let calendar = Calendar.current
+                let newWeekday = calendar.component(.weekday, from: newDate)
+                if targetWeekday != newWeekday { targetWeekday = newWeekday }
+                let newDay = calendar.component(.day, from: newDate)
+                if targetDayOfMonth != newDay { targetDayOfMonth = newDay }
+                let newMonth = calendar.component(.month, from: newDate)
+                if targetMonth != newMonth { targetMonth = newMonth }
+                if targetDayOfYear != newDay { targetDayOfYear = newDay }
+            }
+            .onChange(of: targetWeekday) { _, newWeekday in
+                if Calendar.current.component(.weekday, from: firstDueDate) != newWeekday {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetDayOfMonth) { _, newDay in
+                if Calendar.current.component(.day, from: firstDueDate) != newDay {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetMonth) { _, newMonth in
+                if Calendar.current.component(.month, from: firstDueDate) != newMonth {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetDayOfYear) { _, newDay in
+                if Calendar.current.component(.day, from: firstDueDate) != newDay {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: scheduleUnit) { _, _ in
+                firstDueDate = computeDefaultFirstDueDate()
+            }
+            .onChange(of: isRepeating) { _, _ in
+                firstDueDate = computeDefaultFirstDueDate()
             }
             .navigationTitle("New Task")
             #if os(iOS)
@@ -286,54 +386,27 @@ struct AddTaskView: View {
             }
             .onAppear {
                 isTaskNameFocused = true
+                firstDueDate = computeDefaultFirstDueDate()
             }
         }
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 400)
         #endif
     }
-    
+
     private func computeCreationDate() -> Date {
         let calendar = Calendar.current
-        let now = Date()
-
-        guard isRepeating else {
-            return now
-        }
+        guard isRepeating else { return firstDueDate }
 
         switch scheduleUnit {
         case .days:
-            // For days, creation date is now
-            return now
+            return calendar.date(byAdding: .day, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .weeks:
-            // Compute a creation date that, when schedulePeriod weeks are added, lands on targetWeekday
-            // Find the most recent occurrence of targetWeekday
-            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear, .weekday], from: now)
-            components.weekday = targetWeekday
-            if let targetDate = calendar.date(from: components) {
-                // Go back schedulePeriod weeks from that target
-                return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: targetDate) ?? now
-            }
-            return now
+            return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .months:
-            // Compute a creation date that, when schedulePeriod months are added, lands on targetDayOfMonth
-            var components = calendar.dateComponents([.year, .month], from: now)
-            components.day = targetDayOfMonth
-            if let targetDate = calendar.date(from: components) {
-                // Go back schedulePeriod months from that target
-                return calendar.date(byAdding: .month, value: -schedulePeriod, to: targetDate) ?? now
-            }
-            return now
+            return calendar.date(byAdding: .month, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .years:
-            // Compute a creation date that, when schedulePeriod years are added, lands on targetMonth/targetDayOfYear
-            var components = calendar.dateComponents([.year], from: now)
-            components.month = targetMonth
-            components.day = targetDayOfYear
-            if let targetDate = calendar.date(from: components) {
-                // Go back schedulePeriod years from that target
-                return calendar.date(byAdding: .year, value: -schedulePeriod, to: targetDate) ?? now
-            }
-            return now
+            return calendar.date(byAdding: .year, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         }
     }
 
@@ -390,6 +463,7 @@ struct EditTaskView: View {
     @State private var targetDayOfMonth: Int
     @State private var targetMonth: Int
     @State private var targetDayOfYear: Int
+    @State private var firstDueDate: Date
     @FocusState private var isTaskNameFocused: Bool
 
     private static let weekdaySymbols: [String] = {
@@ -416,6 +490,63 @@ struct EditTaskView: View {
         return 31
     }
 
+    private func computeDefaultFirstDueDate() -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard isRepeating else { return firstDueDate }
+
+        switch scheduleUnit {
+        case .days:
+            var components = calendar.dateComponents([.year, .month, .day], from: now)
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            let result = calendar.date(from: components) ?? now
+            if result <= now {
+                return calendar.date(byAdding: .day, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .weeks:
+            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
+            components.weekday = targetWeekday
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .weekOfYear, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .months:
+            var components = calendar.dateComponents([.year, .month], from: now)
+            components.day = targetDayOfMonth
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .month, value: 1, to: result) ?? now
+            }
+            return result
+
+        case .years:
+            var components = calendar.dateComponents([.year], from: now)
+            components.month = targetMonth
+            components.day = targetDayOfYear
+            components.hour = scheduledHour
+            components.minute = 0
+            components.second = 0
+            var result = calendar.date(from: components) ?? now
+            if result <= now {
+                result = calendar.date(byAdding: .year, value: 1, to: result) ?? now
+            }
+            return result
+        }
+    }
+
     init(task: VTask) {
         self.task = task
         _taskName = State(initialValue: task.name)
@@ -424,13 +555,14 @@ struct EditTaskView: View {
         _isRepeating = State(initialValue: task.isRepeating)
         _scheduledHour = State(initialValue: task.scheduledHour)
 
-        // Derive target values from the task's next due date
+        // Derive target values and firstDueDate from the task's next due date
         let calendar = Calendar.current
         let dueDate = task.nextDueDate
         _targetWeekday = State(initialValue: calendar.component(.weekday, from: dueDate))
         _targetDayOfMonth = State(initialValue: calendar.component(.day, from: dueDate))
         _targetMonth = State(initialValue: calendar.component(.month, from: dueDate))
         _targetDayOfYear = State(initialValue: calendar.component(.day, from: dueDate))
+        _firstDueDate = State(initialValue: dueDate)
     }
 
     var body: some View {
@@ -497,6 +629,12 @@ struct EditTaskView: View {
                         }
                     }
 
+                    DatePicker(
+                        isRepeating ? "First due date" : "Due date",
+                        selection: $firstDueDate,
+                        displayedComponents: .date
+                    )
+
                     Picker("Time of day", selection: $scheduledHour) {
                         ForEach(0..<24, id: \.self) { hour in
                             Text(String(format: "%02d:00", hour))
@@ -535,6 +673,42 @@ struct EditTaskView: View {
                         .font(.caption)
                     }
                 }
+            }
+            .onChange(of: firstDueDate) { _, newDate in
+                let calendar = Calendar.current
+                let newWeekday = calendar.component(.weekday, from: newDate)
+                if targetWeekday != newWeekday { targetWeekday = newWeekday }
+                let newDay = calendar.component(.day, from: newDate)
+                if targetDayOfMonth != newDay { targetDayOfMonth = newDay }
+                let newMonth = calendar.component(.month, from: newDate)
+                if targetMonth != newMonth { targetMonth = newMonth }
+                if targetDayOfYear != newDay { targetDayOfYear = newDay }
+            }
+            .onChange(of: targetWeekday) { _, newWeekday in
+                if Calendar.current.component(.weekday, from: firstDueDate) != newWeekday {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetDayOfMonth) { _, newDay in
+                if Calendar.current.component(.day, from: firstDueDate) != newDay {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetMonth) { _, newMonth in
+                if Calendar.current.component(.month, from: firstDueDate) != newMonth {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: targetDayOfYear) { _, newDay in
+                if Calendar.current.component(.day, from: firstDueDate) != newDay {
+                    firstDueDate = computeDefaultFirstDueDate()
+                }
+            }
+            .onChange(of: scheduleUnit) { _, _ in
+                firstDueDate = computeDefaultFirstDueDate()
+            }
+            .onChange(of: isRepeating) { _, _ in
+                firstDueDate = computeDefaultFirstDueDate()
             }
             .navigationTitle("Edit Task")
             #if os(iOS)
@@ -578,41 +752,17 @@ struct EditTaskView: View {
     
     private func computeCreationDate() -> Date {
         let calendar = Calendar.current
-        let now = Date()
-
-        guard isRepeating else {
-            return task.creationDate  // Keep original for non-repeating
-        }
+        guard isRepeating else { return firstDueDate }
 
         switch scheduleUnit {
         case .days:
-            // For days, keep the original creation date
-            return task.creationDate
+            return calendar.date(byAdding: .day, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .weeks:
-            // Compute a creation date that, when schedulePeriod weeks are added, lands on targetWeekday
-            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear, .weekday], from: now)
-            components.weekday = targetWeekday
-            if let targetDate = calendar.date(from: components) {
-                return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: targetDate) ?? task.creationDate
-            }
-            return task.creationDate
+            return calendar.date(byAdding: .weekOfYear, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .months:
-            // Compute a creation date that, when schedulePeriod months are added, lands on targetDayOfMonth
-            var components = calendar.dateComponents([.year, .month], from: now)
-            components.day = targetDayOfMonth
-            if let targetDate = calendar.date(from: components) {
-                return calendar.date(byAdding: .month, value: -schedulePeriod, to: targetDate) ?? task.creationDate
-            }
-            return task.creationDate
+            return calendar.date(byAdding: .month, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         case .years:
-            // Compute a creation date that, when schedulePeriod years are added, lands on targetMonth/targetDayOfYear
-            var components = calendar.dateComponents([.year], from: now)
-            components.month = targetMonth
-            components.day = targetDayOfYear
-            if let targetDate = calendar.date(from: components) {
-                return calendar.date(byAdding: .year, value: -schedulePeriod, to: targetDate) ?? task.creationDate
-            }
-            return task.creationDate
+            return calendar.date(byAdding: .year, value: -schedulePeriod, to: firstDueDate) ?? firstDueDate
         }
     }
 
