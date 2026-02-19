@@ -186,7 +186,9 @@ struct AddTaskView: View {
         let calendar = Calendar.current
         let now = Date()
 
-        guard isRepeating else { return firstDueDate }
+        guard isRepeating else {
+            return calendar.startOfDay(for: now)
+        }
 
         switch scheduleUnit {
         case .days:

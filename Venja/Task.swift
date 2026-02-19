@@ -65,14 +65,12 @@ final class VTask {
         let calendar = Calendar.current
 
         if !isRepeating {
-            // For non-repeating tasks, they're due on creation date if not completed
-            let baseDate = lastCompletedDate != nil ? Date.distantFuture : creationDate
-            // Set the hour to scheduledHour
-            var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            // For non-repeating tasks, they're due on creation date
+            var components = calendar.dateComponents([.year, .month, .day], from: creationDate)
             components.hour = scheduledHour
             components.minute = 0
             components.second = 0
-            return calendar.date(from: components) ?? baseDate
+            return calendar.date(from: components) ?? creationDate
         }
 
         let referenceDate = lastCompletedDate ?? creationDate

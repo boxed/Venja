@@ -84,12 +84,11 @@ struct WidgetTaskData: Codable {
         let calendar = Calendar.current
 
         if !isRepeating {
-            let baseDate = lastCompletedDate != nil ? Date.distantFuture : creationDate
-            var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            var components = calendar.dateComponents([.year, .month, .day], from: creationDate)
             components.hour = scheduledHour
             components.minute = 0
             components.second = 0
-            return calendar.date(from: components) ?? baseDate
+            return calendar.date(from: components) ?? creationDate
         }
 
         let referenceDate = lastCompletedDate ?? creationDate
