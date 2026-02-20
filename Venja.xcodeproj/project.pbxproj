@@ -10,6 +10,7 @@
 		AE4DF75D2DF5ED9D002F6B38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */; };
 		AE4DF75F2DF5ED9D002F6B38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */; };
 		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AEC8DB392F47A28F006AAF0C /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEC8DB382F47A28F006AAF0C /* CloudKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VenjaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		AEC8DB382F47A28F006AAF0C /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -119,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AEC8DB392F47A28F006AAF0C /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,6 +177,7 @@
 		AE4DF75B2DF5ED9D002F6B38 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AEC8DB382F47A28F006AAF0C /* CloudKit.framework */,
 				AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */,
 				AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */,
 			);
@@ -432,6 +436,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Venja/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -486,6 +491,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Venja/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
