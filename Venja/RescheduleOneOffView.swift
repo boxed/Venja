@@ -85,7 +85,7 @@ struct RescheduleOneOffView: View {
         let tasksData = allTasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,

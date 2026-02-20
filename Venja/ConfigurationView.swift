@@ -45,7 +45,7 @@ struct ConfigurationView: View {
                                 if task.isRepeating || task.lastCompletedDate == nil {
                                     Text("Next due: \(task.nextDueDate.formatted(date: .abbreviated, time: .shortened))")
                                         .font(.caption2)
-                                        .foregroundColor(task.missedCount > 0 ? .red : (task.isOverdue ? .orange : .blue))
+                                        .foregroundColor(task.currentMissedCount > 0 ? .red : (task.isOverdue ? .orange : .blue))
                                 }
                             }
                             Spacer()
@@ -120,7 +120,7 @@ struct ConfigurationView: View {
         let tasksData = tasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
@@ -430,7 +430,7 @@ struct AddTaskView: View {
         let tasksData = allTasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
@@ -789,7 +789,7 @@ struct EditTaskView: View {
         let tasksData = allTasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,

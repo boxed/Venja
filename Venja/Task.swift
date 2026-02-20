@@ -35,6 +35,8 @@ final class VTask {
     private var scheduleUnitRawValue: String = ScheduleUnit.days.rawValue
     var creationDate: Date = Date()
     var lastCompletedDate: Date? = nil
+    // missedCount is kept as a stored field only for CloudKit schema compatibility.
+    // It is never read for display or logic — use currentMissedCount instead.
     var missedCount: Int = 0
     var isRepeating: Bool = true
     var scheduledHour: Int = 0  // Hour of day (0-23) when task is scheduled, default midnight
@@ -214,41 +216,39 @@ final class VTask {
         missedCount = previousMissedCount
     }
     
-    func updateMissedCount(currentDate: Date = Date()) {
-        // Non-repeating tasks don't have missed counts
-        if !isRepeating {
-            missedCount = 0
-            return
-        }
+    var currentMissedCount: Int {
+        missedCountAt(Date())
+    }
+
+    func missedCountAt(_ date: Date) -> Int {
+        guard isRepeating else { return 0 }
 
         let dueDate = nextDueDate
-        guard dueDate < currentDate else {
-            missedCount = 0
-            return
-        }
+        guard dueDate < date else { return 0 }
 
         let calendar = Calendar.current
-
-        // Calculate based on the schedule unit - from due date, not reference date
         let unitsElapsed: Int
         switch scheduleUnit {
         case .days:
-            let components = calendar.dateComponents([.day], from: dueDate, to: currentDate)
+            let components = calendar.dateComponents([.day], from: dueDate, to: date)
             unitsElapsed = components.day ?? 0
         case .weeks:
-            let components = calendar.dateComponents([.day], from: dueDate, to: currentDate)
-            let days = components.day ?? 0
-            unitsElapsed = days / 7
+            let components = calendar.dateComponents([.day], from: dueDate, to: date)
+            unitsElapsed = (components.day ?? 0) / 7
         case .months:
-            let components = calendar.dateComponents([.month], from: dueDate, to: currentDate)
+            let components = calendar.dateComponents([.month], from: dueDate, to: date)
             unitsElapsed = components.month ?? 0
         case .years:
-            let components = calendar.dateComponents([.year], from: dueDate, to: currentDate)
+            let components = calendar.dateComponents([.year], from: dueDate, to: date)
             unitsElapsed = components.year ?? 0
         }
+        return max(0, unitsElapsed / schedulePeriod)
+    }
 
-        // Missed count is how many complete periods have passed since due date
-        missedCount = max(0, unitsElapsed / schedulePeriod)
+    func updateMissedCount(currentDate: Date = Date()) {
+        // Kept for test compatibility only. The stored missedCount field is not used
+        // for display — see currentMissedCount.
+        missedCount = missedCountAt(currentDate)
     }
     
     var totalPoints: Int {

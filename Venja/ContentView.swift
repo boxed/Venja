@@ -27,10 +27,10 @@ struct ContentView: View {
                 return false
             }
             return task.nextDueDate <= Date()
-        }.sorted { 
+        }.sorted {
             // Sort by missed count (descending), then by next due date (ascending)
-            if $0.missedCount != $1.missedCount {
-                return $0.missedCount > $1.missedCount
+            if $0.currentMissedCount != $1.currentMissedCount {
+                return $0.currentMissedCount > $1.currentMissedCount
             }
             return $0.nextDueDate < $1.nextDueDate
         }
@@ -170,11 +170,6 @@ struct ContentView: View {
     }
     
     private func updateMissedCounts() {
-        for task in tasks {
-            task.updateMissedCount()
-        }
-        
-        // Update widget data
         saveCurrentTaskForWidget()
     }
     
@@ -195,7 +190,7 @@ struct ContentView: View {
         let tasksData = tasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
@@ -243,12 +238,12 @@ struct TaskCard: View {
             
             Spacer()
             
-            if task.missedCount > 0 {
+            if task.currentMissedCount > 0 {
                 ZStack {
                     Circle()
                         .fill(Color.red)
                         .frame(width: 30, height: 30)
-                    Text("\(task.missedCount)")
+                    Text("\(task.currentMissedCount)")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
                 }

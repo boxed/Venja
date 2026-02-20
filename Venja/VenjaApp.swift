@@ -67,15 +67,8 @@ struct VenjaApp: App {
     }
 
     private func updateAllMissedCounts() {
-        Task {
-            let context = sharedModelContainer.mainContext
-            let descriptor = FetchDescriptor<VTask>()
-            if let tasks = try? context.fetch(descriptor) {
-                for task in tasks {
-                    task.updateMissedCount()
-                }
-            }
-        }
+        // No-op: missedCount is now computed dynamically via currentMissedCount.
+        // Previously this wrote stale values to CloudKit before sync completed.
     }
 
     #if os(iOS)
@@ -151,7 +144,7 @@ struct VenjaApp: App {
         let tasksData = tasks.map { task in
             WidgetTaskData(
                 name: task.name,
-                missedCount: task.missedCount,
+                missedCount: task.currentMissedCount,
                 schedulePeriod: task.schedulePeriod,
                 scheduleUnit: task.scheduleUnit.rawValue,
                 creationDate: task.creationDate,
