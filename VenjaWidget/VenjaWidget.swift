@@ -81,55 +81,16 @@ struct WidgetTaskData: Codable {
     let scheduledHour: Int
 
     var nextDueDate: Date {
-        let calendar = Calendar.current
-
-        if !isRepeating {
-            var components = calendar.dateComponents([.year, .month, .day], from: creationDate)
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-            return calendar.date(from: components) ?? creationDate
-        }
-
-        let referenceDate = lastCompletedDate ?? creationDate
-
-        let component: Calendar.Component
-        switch scheduleUnit {
-        case "Days":
-            component = .day
-        case "Weeks":
-            component = .weekOfYear
-        case "Months":
-            component = .month
-        case "Years":
-            component = .year
-        default:
-            component = .day
-        }
-
-        guard let nextDate = calendar.date(byAdding: component, value: schedulePeriod, to: referenceDate) else {
-            return referenceDate
-        }
-
-        var components = calendar.dateComponents([.year, .month, .day], from: nextDate)
-        components.hour = scheduledHour
-        components.minute = 0
-        components.second = 0
-
-        guard var result = calendar.date(from: components) else {
-            return nextDate
-        }
-
-        // If setting the hour caused the date to be before or equal to the reference date,
-        // advance by another period to ensure we're always moving forward
-        while result <= referenceDate {
-            guard let advanced = calendar.date(byAdding: component, value: schedulePeriod, to: result) else {
-                break
-            }
-            result = advanced
-        }
-
-        return result
+        // Delegate to the shared scheduling logic in Task.swift (compiled into
+        // this widget target) so the widget can never diverge from the app.
+        computeNextDueDate(
+            isRepeating: isRepeating,
+            schedulePeriod: schedulePeriod,
+            scheduleUnit: ScheduleUnit(rawValue: scheduleUnit) ?? .days,
+            creationDate: creationDate,
+            lastCompletedDate: lastCompletedDate,
+            scheduledHour: scheduledHour
+        )
     }
     
     var isOverdue: Bool {

@@ -28,6 +28,138 @@ enum ScheduleUnit: String, Codable, CaseIterable {
     }
 }
 
+/// Computes the next due date for a task from its raw scheduling fields.
+///
+/// This is the single source of truth shared by the app (`VTask`) and the
+/// widget (`WidgetTaskData`). Both targets compile `Task.swift`, so routing
+/// every surface through this one function guarantees the app and the widget
+/// can never disagree about whether a task is due.
+func computeNextDueDate(
+    isRepeating: Bool,
+    schedulePeriod: Int,
+    scheduleUnit: ScheduleUnit,
+    creationDate: Date,
+    lastCompletedDate: Date?,
+    scheduledHour: Int
+) -> Date {
+    let calendar = Calendar.current
+
+    if !isRepeating {
+        // For non-repeating tasks, they're due on creation date
+        var components = calendar.dateComponents([.year, .month, .day], from: creationDate)
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+        return calendar.date(from: components) ?? creationDate
+    }
+
+    let referenceDate = lastCompletedDate ?? creationDate
+
+    switch scheduleUnit {
+    case .days:
+        // For days, advance from reference date
+        var components = calendar.dateComponents([.year, .month, .day], from: referenceDate)
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return referenceDate
+        }
+
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: .day, value: schedulePeriod, to: result) else {
+                break
+            }
+            result = advanced
+        }
+
+        return result
+
+    case .weeks:
+        // For weeks, respect the target weekday encoded in creationDate
+        let targetWeekday = calendar.component(.weekday, from: creationDate)
+
+        // Get the week containing the reference date and set to target weekday
+        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: referenceDate)
+        components.weekday = targetWeekday
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return referenceDate
+        }
+
+        // Advance by schedulePeriod weeks until we're past the reference date
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: .weekOfYear, value: schedulePeriod, to: result) else {
+                break
+            }
+            result = advanced
+        }
+
+        return result
+
+    case .months:
+        // For months, respect the target day-of-month encoded in creationDate
+        let targetDay = calendar.component(.day, from: creationDate)
+
+        var components = calendar.dateComponents([.year, .month], from: referenceDate)
+        // Handle months with fewer days than target
+        let maxDay = calendar.range(of: .day, in: .month, for: referenceDate)?.count ?? 28
+        components.day = min(targetDay, maxDay)
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return referenceDate
+        }
+
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: .month, value: schedulePeriod, to: result) else {
+                break
+            }
+            // Re-adjust day for the new month's length
+            let advancedMaxDay = calendar.range(of: .day, in: .month, for: advanced)?.count ?? 28
+            var newComponents = calendar.dateComponents([.year, .month], from: advanced)
+            newComponents.day = min(targetDay, advancedMaxDay)
+            newComponents.hour = scheduledHour
+            newComponents.minute = 0
+            newComponents.second = 0
+            result = calendar.date(from: newComponents) ?? advanced
+        }
+
+        return result
+
+    case .years:
+        // For years, respect the target month and day encoded in creationDate
+        let targetMonth = calendar.component(.month, from: creationDate)
+        let targetDay = calendar.component(.day, from: creationDate)
+
+        var components = calendar.dateComponents([.year], from: referenceDate)
+        components.month = targetMonth
+        components.day = targetDay
+        components.hour = scheduledHour
+        components.minute = 0
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else {
+            return referenceDate
+        }
+
+        while result <= referenceDate {
+            guard let advanced = calendar.date(byAdding: .year, value: schedulePeriod, to: result) else {
+                break
+            }
+            result = advanced
+        }
+
+        return result
+    }
+}
+
 @Model
 final class VTask {
     var name: String = ""
@@ -64,122 +196,14 @@ final class VTask {
     }
     
     var nextDueDate: Date {
-        let calendar = Calendar.current
-
-        if !isRepeating {
-            // For non-repeating tasks, they're due on creation date
-            var components = calendar.dateComponents([.year, .month, .day], from: creationDate)
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-            return calendar.date(from: components) ?? creationDate
-        }
-
-        let referenceDate = lastCompletedDate ?? creationDate
-
-        switch scheduleUnit {
-        case .days:
-            // For days, advance from reference date
-            var components = calendar.dateComponents([.year, .month, .day], from: referenceDate)
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-
-            guard var result = calendar.date(from: components) else {
-                return referenceDate
-            }
-
-            while result <= referenceDate {
-                guard let advanced = calendar.date(byAdding: .day, value: schedulePeriod, to: result) else {
-                    break
-                }
-                result = advanced
-            }
-
-            return result
-
-        case .weeks:
-            // For weeks, respect the target weekday encoded in creationDate
-            let targetWeekday = calendar.component(.weekday, from: creationDate)
-
-            // Get the week containing the reference date and set to target weekday
-            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: referenceDate)
-            components.weekday = targetWeekday
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-
-            guard var result = calendar.date(from: components) else {
-                return referenceDate
-            }
-
-            // Advance by schedulePeriod weeks until we're past the reference date
-            while result <= referenceDate {
-                guard let advanced = calendar.date(byAdding: .weekOfYear, value: schedulePeriod, to: result) else {
-                    break
-                }
-                result = advanced
-            }
-
-            return result
-
-        case .months:
-            // For months, respect the target day-of-month encoded in creationDate
-            let targetDay = calendar.component(.day, from: creationDate)
-
-            var components = calendar.dateComponents([.year, .month], from: referenceDate)
-            // Handle months with fewer days than target
-            let maxDay = calendar.range(of: .day, in: .month, for: referenceDate)?.count ?? 28
-            components.day = min(targetDay, maxDay)
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-
-            guard var result = calendar.date(from: components) else {
-                return referenceDate
-            }
-
-            while result <= referenceDate {
-                guard let advanced = calendar.date(byAdding: .month, value: schedulePeriod, to: result) else {
-                    break
-                }
-                // Re-adjust day for the new month's length
-                let advancedMaxDay = calendar.range(of: .day, in: .month, for: advanced)?.count ?? 28
-                var newComponents = calendar.dateComponents([.year, .month], from: advanced)
-                newComponents.day = min(targetDay, advancedMaxDay)
-                newComponents.hour = scheduledHour
-                newComponents.minute = 0
-                newComponents.second = 0
-                result = calendar.date(from: newComponents) ?? advanced
-            }
-
-            return result
-
-        case .years:
-            // For years, respect the target month and day encoded in creationDate
-            let targetMonth = calendar.component(.month, from: creationDate)
-            let targetDay = calendar.component(.day, from: creationDate)
-
-            var components = calendar.dateComponents([.year], from: referenceDate)
-            components.month = targetMonth
-            components.day = targetDay
-            components.hour = scheduledHour
-            components.minute = 0
-            components.second = 0
-
-            guard var result = calendar.date(from: components) else {
-                return referenceDate
-            }
-
-            while result <= referenceDate {
-                guard let advanced = calendar.date(byAdding: .year, value: schedulePeriod, to: result) else {
-                    break
-                }
-                result = advanced
-            }
-
-            return result
-        }
+        computeNextDueDate(
+            isRepeating: isRepeating,
+            schedulePeriod: schedulePeriod,
+            scheduleUnit: scheduleUnit,
+            creationDate: creationDate,
+            lastCompletedDate: lastCompletedDate,
+            scheduledHour: scheduledHour
+        )
     }
     
     var isOverdue: Bool {
