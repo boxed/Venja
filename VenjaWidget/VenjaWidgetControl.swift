@@ -13,65 +13,55 @@ struct VenjaWidgetControl: ControlWidget {
     static let kind: String = "net.kodare.Venja.VenjaWidget"
 
     var body: some ControlWidgetConfiguration {
-        AppIntentControlConfiguration(
+        StaticControlConfiguration(
             kind: Self.kind,
             provider: Provider()
         ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value.isRunning,
-                action: StartTimerIntent(value.name)
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+            ControlWidgetButton(action: OpenVenjaIntent()) {
+                Label(value.label, systemImage: value.symbol)
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
+        .displayName("Venja Tasks")
+        .description("Shows how many tasks are due and opens Venja.")
     }
 }
 
 extension VenjaWidgetControl {
     struct Value {
-        var isRunning: Bool
-        var name: String
-    }
+        var dueCount: Int
 
-    struct Provider: AppIntentControlValueProvider {
-        func previewValue(configuration: TimerConfiguration) -> Value {
-            VenjaWidgetControl.Value(isRunning: false, name: configuration.timerName)
+        var label: String {
+            dueCount == 0 ? "All done" : "\(dueCount) due"
         }
 
-        func currentValue(configuration: TimerConfiguration) async throws -> Value {
-            let isRunning = true // Check if the timer is running
-            return VenjaWidgetControl.Value(isRunning: isRunning, name: configuration.timerName)
+        /// A cluster-of-circles SF Symbol that evokes the accessory widget's ring,
+        /// falling back to a checkmark when nothing is due.
+        var symbol: String {
+            dueCount == 0 ? "checkmark.circle" : "circle.hexagongrid.fill"
+        }
+    }
+
+    struct Provider: ControlValueProvider {
+        var previewValue: Value {
+            Value(dueCount: 3)
+        }
+
+        func currentValue() async throws -> Value {
+            let now = Date()
+            let active = loadWidgetTasks().filter { $0.isActiveForDate(now) }
+            return Value(dueCount: active.count)
         }
     }
 }
 
-struct TimerConfiguration: ControlConfigurationIntent {
-    static let title: LocalizedStringResource = "Timer Name Configuration"
+/// Reads the shared task snapshot the main app writes to the app group.
+private func loadWidgetTasks() -> [WidgetTaskData] {
+    let userDefaults = UserDefaults(suiteName: "group.net.kodare.Venja") ?? UserDefaults.standard
 
-    @Parameter(title: "Timer Name", default: "Timer")
-    var timerName: String
-}
-
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer Name")
-    var name: String
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
-
-    init() {}
-
-    init(_ name: String) {
-        self.name = name
+    // Try new key first, fall back to old key for backward compatibility.
+    let data = userDefaults.data(forKey: "allTasks") ?? userDefaults.data(forKey: "activeTasks")
+    guard let data, let tasks = try? JSONDecoder().decode([WidgetTaskData].self, from: data) else {
+        return []
     }
-
-    func perform() async throws -> some IntentResult {
-        // Start the timer…
-        return .result()
-    }
+    return tasks
 }

@@ -138,6 +138,9 @@ struct ConfigurationView: View {
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+        ControlCenter.shared.reloadAllControls()
+        #endif
     }
 }
 
@@ -448,6 +451,9 @@ struct AddTaskView: View {
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+        ControlCenter.shared.reloadAllControls()
+        #endif
     }
 }
 
@@ -807,6 +813,9 @@ struct EditTaskView: View {
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+        ControlCenter.shared.reloadAllControls()
+        #endif
     }
 }
 

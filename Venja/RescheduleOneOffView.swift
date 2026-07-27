@@ -103,6 +103,9 @@ struct RescheduleOneOffView: View {
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+        ControlCenter.shared.reloadAllControls()
+        #endif
     }
 }
 

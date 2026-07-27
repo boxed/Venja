@@ -53,6 +53,9 @@ struct VenjaApp: App {
                 #endif
                 // Update widget when app goes to background
                 WidgetCenter.shared.reloadAllTimelines()
+                #if os(iOS)
+                ControlCenter.shared.reloadAllControls()
+                #endif
             case .active:
                 #if os(iOS)
                 // Cancel pending background tasks when app becomes active
@@ -166,5 +169,8 @@ struct VenjaApp: App {
         
         // Reload widget timelines
         WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+        ControlCenter.shared.reloadAllControls()
+        #endif
     }
 }
