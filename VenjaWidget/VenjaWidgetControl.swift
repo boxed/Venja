@@ -5,6 +5,9 @@
 //  Created by Anders Hovmöller on 2025-06-08.
 //
 
+// ControlWidget (Control Center / Lock Screen controls) is iOS-only.
+#if os(iOS)
+
 import AppIntents
 import SwiftUI
 import WidgetKit
@@ -65,3 +68,5 @@ private func loadWidgetTasks() -> [WidgetTaskData] {
     }
     return tasks
 }
+
+#endif

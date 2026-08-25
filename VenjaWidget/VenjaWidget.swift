@@ -113,6 +113,7 @@ struct VenjaWidgetEntryView : View {
     var entry: Provider.Entry
     @Environment(\.widgetFamily) var widgetFamily
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.widgetRenderingMode) var renderingMode
     
     var maxTasksToShow: Int {
         switch widgetFamily {
@@ -126,11 +127,21 @@ struct VenjaWidgetEntryView : View {
     }
     
     var textColor: Color {
+        // Outside full color (macOS desktop widgets go .vibrant when the desktop
+        // isn't revealed, iOS tinting goes .accented) the system re-renders the
+        // widget from luminance alone, so dark content vanishes into the plate.
+        guard renderingMode == .fullColor else {
+            return .white
+        }
         return if colorScheme == ColorScheme.dark {
             Color.black
         } else {
             Color.white
         }
+    }
+
+    var doneColor: Color {
+        renderingMode == .fullColor ? .green : .white
     }
 
     var body: some View {
@@ -172,14 +183,43 @@ struct VenjaWidgetEntryView : View {
                 VStack {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.4))
-                        .foregroundColor(.green)
+                        .foregroundColor(doneColor)
                     Text("Done!")
                         .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.2))
-                        .foregroundColor(.green)
+                        .foregroundColor(doneColor)
                         .minimumScaleFactor(0.5)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        }
+    }
+}
+
+/// The widget's plate. Saturated fills only work in `.fullColor`; in `.vibrant`
+/// and `.accented` the system collapses them to a single flat tone (a solid
+/// #262626 blob on the macOS desktop), hiding the task list entirely. In those
+/// modes we hand over to the system material and let the text carry the content.
+struct VenjaWidgetBackground: View {
+    let hasMissed: Bool
+    let isEmpty: Bool
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    var body: some View {
+        if renderingMode == .fullColor {
+            if hasMissed {
+                Color.red
+            }
+            else if isEmpty {
+                ContainerRelativeShape()
+                    .stroke(.green, lineWidth: 4)
+            }
+            else {
+                Color.orange
+            }
+        }
+        else {
+            Rectangle()
+                .fill(.fill.tertiary)
         }
     }
 }
@@ -191,16 +231,10 @@ struct VenjaWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VenjaWidgetEntryView(entry: entry)
                 .containerBackground(for: .widget) {
-                    if entry.tasks.contains(where: { $0.missedCount > 0 }) {
-                        Color.red
-                    }
-                    else if entry.tasks.isEmpty {
-                        ContainerRelativeShape()
-                            .stroke(.green, lineWidth: 4)
-                    }
-                    else {
-                        Color.orange
-                    }
+                    VenjaWidgetBackground(
+                        hasMissed: entry.tasks.contains(where: { $0.missedCount > 0 }),
+                        isEmpty: entry.tasks.isEmpty
+                    )
                 }
         }
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])

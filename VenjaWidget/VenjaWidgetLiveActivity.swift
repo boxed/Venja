@@ -5,6 +5,9 @@
 //  Created by Anders Hovmöller on 2025-06-08.
 //
 
+// ActivityKit Live Activities are iOS-only.
+#if os(iOS)
+
 import ActivityKit
 import WidgetKit
 import SwiftUI
@@ -78,3 +81,5 @@ extension VenjaWidgetAttributes.ContentState {
     VenjaWidgetAttributes.ContentState.smiley
     VenjaWidgetAttributes.ContentState.starEyes
 }
+
+#endif

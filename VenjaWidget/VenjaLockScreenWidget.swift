@@ -5,6 +5,9 @@
 //  Lock screen widget for Venja
 //
 
+// The accessory widget families only exist on iOS.
+#if os(iOS)
+
 import WidgetKit
 import SwiftUI
 import SwiftData
@@ -312,3 +315,5 @@ extension LockScreenProvider {
     ])
     SimpleEntry(date: .now, configuration: ConfigurationAppIntent(), tasks: [])
 }
+
+#endif

@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		AE4DF75D2DF5ED9D002F6B38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75C2DF5ED9D002F6B38 /* WidgetKit.framework */; };
 		AE4DF75F2DF5ED9D002F6B38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4DF75E2DF5ED9D002F6B38 /* SwiftUI.framework */; };
-		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AE4DF7702DF5ED9E002F6B38 /* VenjaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE4DF75A2DF5ED9D002F6B38 /* VenjaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AEC8DB392F47A28F006AAF0C /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEC8DB382F47A28F006AAF0C /* CloudKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -403,7 +403,6 @@
 		};
 		AE4DF76F2DF5ED9E002F6B38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			platformFilter = ios;
 			target = AE4DF7592DF5ED9D002F6B38 /* VenjaWidgetExtension */;
 			targetProxy = AE4DF76E2DF5ED9E002F6B38 /* PBXContainerItemProxy */;
 		};
@@ -743,6 +742,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B6FVY827P9;
+				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VenjaWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = VenjaWidget;
@@ -753,12 +753,13 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.killingar.venja.VenjaWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -776,6 +777,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B6FVY827P9;
+				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VenjaWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = VenjaWidget;
@@ -786,12 +788,13 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.killingar.venja.VenjaWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;

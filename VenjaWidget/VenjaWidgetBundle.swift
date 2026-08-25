@@ -12,8 +12,10 @@ import SwiftUI
 struct VenjaWidgetBundle: WidgetBundle {
     var body: some Widget {
         VenjaWidget()
+#if os(iOS)
         VenjaWidgetControl()
         VenjaWidgetLiveActivity()
         VenjaLockScreenWidget()
+#endif
     }
 }
