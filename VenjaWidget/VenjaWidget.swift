@@ -133,12 +133,16 @@ struct VenjaWidgetEntryView : View {
         guard renderingMode == .fullColor else {
             return .white
         }
-        // Colored plates (orange for missed, green for all done) need a fixed
-        // high-contrast color; the neutral plate uses the standard label color.
-        if missedTaskCount > 0 || entry.tasks.isEmpty {
+        // The colored plate (orange for missed) needs a fixed high-contrast
+        // color; the neutral plate uses the standard label color.
+        if missedTaskCount > 0 {
             return colorScheme == ColorScheme.dark ? Color.black : Color.white
         }
         return .primary
+    }
+
+    var doneColor: Color {
+        renderingMode == .fullColor ? Color(red: 0x70 / 255, green: 0x8F / 255, blue: 0xA8 / 255) : .white
     }
 
     var missedTaskCount: Int {
@@ -165,9 +169,9 @@ struct VenjaWidgetEntryView : View {
             }
         } else {
             GeometryReader { geometry in
-                Image(systemName: "checkmark")
-                    .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.42, weight: .bold))
-                    .foregroundColor(textColor)
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.38))
+                    .foregroundColor(doneColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -241,16 +245,12 @@ struct VenjaWidgetEntryView : View {
 /// modes we hand over to the system material and let the text carry the content.
 struct VenjaWidgetBackground: View {
     let hasMissed: Bool
-    let isEmpty: Bool
     @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
         if renderingMode == .fullColor {
             if hasMissed {
                 Color.orange
-            }
-            else if isEmpty {
-                Color.green
             }
             else {
                 Rectangle()
@@ -272,8 +272,7 @@ struct VenjaWidget: Widget {
             VenjaWidgetEntryView(entry: entry)
                 .containerBackground(for: .widget) {
                     VenjaWidgetBackground(
-                        hasMissed: entry.tasks.contains(where: { $0.missedCount > 0 }),
-                        isEmpty: entry.tasks.isEmpty
+                        hasMissed: entry.tasks.contains(where: { $0.missedCount > 0 })
                     )
                 }
         }
