@@ -10,64 +10,6 @@
 
 import WidgetKit
 import SwiftUI
-import SwiftData
-
-struct LockScreenProvider: AppIntentTimelineProvider {
-    private var modelContainer: ModelContainer = {
-        let schema = Schema([
-            VTask.self,
-            CompletionHistory.self,
-        ])
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-        
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), tasks: [], isPlaceholder: true)
-    }
-
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        let tasks = fetchTasksSync()
-        return SimpleEntry(date: Date(), configuration: configuration, tasks: tasks)
-    }
-    
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        let currentDate = Date()
-        let calendar = Calendar.current
-
-        // Fetch current tasks directly from SwiftData
-        let activeTasks = fetchTasksSync()
-        let allTasks = fetchAllTasksSync()
-
-        // Create single entry for current state
-        let entry = SimpleEntry(date: currentDate, configuration: configuration, tasks: activeTasks)
-
-        // Calculate when to reload the timeline
-        let startOfTomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: currentDate)!)
-
-        // Find the next task that will become due (for intra-day scheduling)
-        let nextTaskDueDate = allTasks
-            .filter { $0.nextDueDate > currentDate }
-            .map { $0.nextDueDate }
-            .min()
-
-        // Reload timeline at: next task due time, midnight, or in 4 hours - whichever comes first
-        var nextUpdate = min(startOfTomorrow, currentDate.addingTimeInterval(4 * 3600))
-        if let nextDue = nextTaskDueDate {
-            nextUpdate = min(nextUpdate, nextDue)
-        }
-
-        return Timeline(entries: [entry], policy: .after(nextUpdate))
-    }
-}
 
 struct VenjaLockScreenWidgetCircularView: View {
     var entry: SimpleEntry
@@ -80,12 +22,8 @@ struct VenjaLockScreenWidgetCircularView: View {
     }
 
     var body: some View {
-        if entry.isPlaceholder {
+        if entry.isPlaceholder || entry.tasks.isEmpty {
             Color.clear
-        } else if entry.tasks.isEmpty {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title)
-                .widgetAccentable()
         } else {
             GeometryReader { geometry in
                 let size = min(geometry.size.width, geometry.size.height)
@@ -117,41 +55,37 @@ struct VenjaLockScreenWidgetRectangularView: View {
     var entry: SimpleEntry
 
     var body: some View {
-        if entry.isPlaceholder {
+        if entry.isPlaceholder || entry.tasks.isEmpty {
             Color.clear
-        } else if entry.tasks.isEmpty {
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title3)
-                Text("All done!")
-                    .font(.headline)
-            }
-            .widgetAccentable()
         } else {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    if entry.tasks.contains(where: { $0.missedCount > 0 }) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .font(.caption)
+            let missedCount = entry.tasks.filter { $0.missedCount > 0 }.count
+            HStack(spacing: 8) {
+                Text("\(missedCount > 0 ? missedCount : entry.tasks.count)")
+                    .font(.system(size: 40, weight: .heavy))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                Rectangle()
+                    .frame(width: 1)
+                    .opacity(0.4)
+                    .padding(.vertical, 4)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    if missedCount > 0 {
+                        Text("MISSED")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .opacity(0.8)
                     }
-                    Text("\(entry.tasks.count) task\(entry.tasks.count == 1 ? "" : "s") due")
-                        .font(.caption)
-                        .fontWeight(.semibold)
+
+                    ForEach(Array(entry.tasks.prefix(missedCount > 0 ? 2 : 3).enumerated()), id: \.offset) { _, task in
+                        Text(task.name)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
                 }
-                
-                if let firstTask = entry.tasks.first {
-                    Text(firstTask.name)
-                        .font(.caption2)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                
-                if entry.tasks.count > 1, let secondTask = entry.tasks.dropFirst().first {
-                    Text(secondTask.name)
-                        .font(.caption2)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .widgetAccentable()
         }
@@ -162,16 +96,21 @@ struct VenjaLockScreenWidgetInlineView: View {
     var entry: SimpleEntry
 
     var body: some View {
-        if entry.isPlaceholder {
+        if entry.isPlaceholder || entry.tasks.isEmpty {
             Color.clear
-        } else if entry.tasks.isEmpty {
-            Label("All done!", systemImage: "checkmark.circle.fill")
         } else {
-            let hasMissed = entry.tasks.contains(where: { $0.missedCount > 0 })
-            Label {
-                Text("\(entry.tasks.count) task\(entry.tasks.count == 1 ? "" : "s")")
-            } icon: {
-                Image(systemName: hasMissed ? "exclamationmark.circle.fill" : "circle.fill")
+            let missedCount = entry.tasks.filter { $0.missedCount > 0 }.count
+            let firstName = entry.tasks.first?.name ?? ""
+            if missedCount > 0 {
+                Label {
+                    Text("\(missedCount) missed · \(firstName)")
+                } icon: {
+                    Image(systemName: "exclamationmark.circle.fill")
+                }
+            } else if entry.tasks.count == 1 {
+                Text(firstName)
+            } else {
+                Text("\(entry.tasks.count) · \(firstName)")
             }
         }
     }
@@ -203,72 +142,16 @@ struct VenjaLockScreenWidget: Widget {
     let kind: String = "VenjaLockScreenWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: LockScreenProvider()) { entry in
+        // Uses the same Provider as the home screen widget: it reads the task
+        // snapshot the app writes to the shared app group UserDefaults. A
+        // SwiftData container opened inside the widget extension would see the
+        // extension's own (empty) store, not the app's.
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VenjaLockScreenWidgetEntryView(entry: entry)
         }
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
         .configurationDisplayName("Venja Tasks")
         .description("View your pending tasks on the lock screen")
-    }
-}
-
-extension LockScreenProvider {
-    func fetchAllTasksSync() -> [VTask] {
-        let context = ModelContext(modelContainer)
-
-        do {
-            let descriptor = FetchDescriptor<VTask>()
-            return try context.fetch(descriptor)
-        } catch {
-            print("Failed to fetch tasks: \(error)")
-            return []
-        }
-    }
-
-    func fetchTasksSync() -> [WidgetTaskData] {
-        let context = ModelContext(modelContainer)
-        
-        do {
-            let descriptor = FetchDescriptor<VTask>()
-            let tasks = try context.fetch(descriptor)
-            
-            // Update missed counts for all tasks
-            for task in tasks {
-                task.updateMissedCount()
-            }
-            
-            let activeTasks = tasks.filter { task in
-                // Check if task is active (due date has passed, respecting scheduledHour)
-                if task.isRepeating {
-                    return task.nextDueDate <= Date()
-                } else {
-                    // Non-repeating tasks are active if not completed and due
-                    return task.lastCompletedDate == nil && task.nextDueDate <= Date()
-                }
-            }.sorted { task1, task2 in
-                if task1.missedCount != task2.missedCount {
-                    return task1.missedCount > task2.missedCount
-                }
-                return task1.nextDueDate < task2.nextDueDate
-            }.map { task in
-                WidgetTaskData(
-                    name: task.name,
-                    missedCount: task.missedCount,
-                    schedulePeriod: task.schedulePeriod,
-                    scheduleUnit: task.scheduleUnit.rawValue,
-                    creationDate: task.creationDate,
-                    lastCompletedDate: task.lastCompletedDate,
-                    isRepeating: task.isRepeating,
-                    totalPoints: task.totalPoints,
-                    scheduledHour: task.scheduledHour
-                )
-            }
-            
-            return activeTasks
-        } catch {
-            print("Failed to fetch tasks: \(error)")
-            return []
-        }
     }
 }
 

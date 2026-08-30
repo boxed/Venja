@@ -133,63 +133,103 @@ struct VenjaWidgetEntryView : View {
         guard renderingMode == .fullColor else {
             return .white
         }
-        return if colorScheme == ColorScheme.dark {
-            Color.black
-        } else {
-            Color.white
+        // Colored plates (orange for missed, green for all done) need a fixed
+        // high-contrast color; the neutral plate uses the standard label color.
+        if missedTaskCount > 0 || entry.tasks.isEmpty {
+            return colorScheme == ColorScheme.dark ? Color.black : Color.white
         }
+        return .primary
     }
 
-    var doneColor: Color {
-        renderingMode == .fullColor ? .green : .white
+    var missedTaskCount: Int {
+        entry.tasks.filter { $0.missedCount > 0 }.count
+    }
+
+    // Content margins are disabled on the configuration; the system defaults
+    // are too generous for a list widget, so the plate padding lives here.
+    var contentPadding: CGFloat {
+        16
     }
 
     var body: some View {
         if entry.isPlaceholder {
             Color.clear
         } else if !entry.tasks.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(entry.tasks.prefix(maxTasksToShow).enumerated()), id: \.offset) { index, task in
-                    HStack(spacing: 4) {
-                        if task.missedCount > 0 {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .font(widgetFamily == .systemSmall ? .footnote : .body)
-                                .foregroundColor(textColor)
-                        }
-                        
-                        Text(task.name)
-                            .font(widgetFamily == .systemSmall ? .body : .title3)
-                            .foregroundColor(textColor)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-                
-                if entry.tasks.count > maxTasksToShow {
-                    Text("+\(entry.tasks.count - maxTasksToShow) more")
-                        .font(.footnote)
-                        .foregroundColor(textColor)
-                        .minimumScaleFactor(0.7)
-                }
-                
-                Spacer(minLength: 0)
+            if widgetFamily == .systemMedium || widgetFamily == .systemLarge {
+                bigNumberLayout
+                    .padding(contentPadding)
+            } else {
+                taskList
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(contentPadding)
             }
-            .padding(0)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else {
             GeometryReader { geometry in
-                VStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.4))
-                        .foregroundColor(doneColor)
-                    Text("Done!")
-                        .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.2))
-                        .foregroundColor(doneColor)
-                        .minimumScaleFactor(0.5)
+                Image(systemName: "checkmark")
+                    .font(.system(size: min(geometry.size.width, geometry.size.height) * 0.42, weight: .bold))
+                    .foregroundColor(textColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+
+    /// Poster-scale count as the hero, with the task list beside it.
+    var bigNumberLayout: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(missedTaskCount > 0 ? missedTaskCount : entry.tasks.count)")
+                    .font(.system(size: widgetFamily == .systemLarge ? 130 : 88, weight: .heavy))
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+                Text(missedTaskCount > 0 ? "MISSED" : "to do")
+                    .font(.system(size: 14, weight: .bold))
+                    .tracking(missedTaskCount > 0 ? 0.8 : 0)
+                    .foregroundColor(textColor.opacity(0.8))
+            }
+            .fixedSize(horizontal: true, vertical: false)
+
+            Rectangle()
+                .fill(textColor.opacity(0.35))
+                .frame(width: 1.5)
+                .padding(.vertical, 6)
+
+            taskList
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    var taskList: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            ForEach(Array(entry.tasks.prefix(maxTasksToShow).enumerated()), id: \.offset) { index, task in
+                HStack(spacing: 4) {
+                    if task.missedCount > 0 {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(widgetFamily == .systemSmall ? .footnote : .body)
+                            .foregroundColor(textColor)
+                    }
+
+                    Text(task.name)
+                        .font(widgetFamily == .systemSmall ? .body : .title3)
+                        .foregroundColor(textColor)
+                        .lineLimit(1)
+                        // Long names should truncate with an ellipsis, not
+                        // shrink into unreadably tiny text.
+                        .minimumScaleFactor(0.9)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            if entry.tasks.count > maxTasksToShow {
+                Text("+\(entry.tasks.count - maxTasksToShow) more")
+                    .font(.footnote)
+                    .foregroundColor(textColor)
+            }
+
+            if widgetFamily == .systemSmall {
+                Spacer(minLength: 0)
             }
         }
     }
@@ -207,14 +247,14 @@ struct VenjaWidgetBackground: View {
     var body: some View {
         if renderingMode == .fullColor {
             if hasMissed {
-                Color.red
+                Color.orange
             }
             else if isEmpty {
-                ContainerRelativeShape()
-                    .stroke(.green, lineWidth: 4)
+                Color.green
             }
             else {
-                Color.orange
+                Rectangle()
+                    .fill(.background)
             }
         }
         else {
@@ -238,6 +278,7 @@ struct VenjaWidget: Widget {
                 }
         }
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
     }
 }
 
